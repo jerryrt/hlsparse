@@ -356,6 +356,28 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
 
         ++(dest->nb_maps);
 
+    } else if(EQUAL(pt, EXTXDATERANGE)) {
+        ++pt;
+        daterange_t *daterange = hls_malloc(sizeof(daterange_t));;
+        parse_daterange_init(daterange);
+        pt += parse_daterange(pt, size - (pt - src), daterange);
+        daterange_list_t *next = &dest->dateranges;
+
+        while(next) {
+            if(!next->data) {
+                next->data = daterange;
+                break;
+            } else if(!next->next) {
+                next->next = hls_malloc(sizeof(daterange_t));
+                parse_daterange_list_init(next->next);
+                next->next->data = daterange;
+                break;
+            }
+            next = next->next;
+        };
+
+        ++(dest->nb_dateranges);
+
     } else {
         // custom src
         char *custom_tag = NULL;

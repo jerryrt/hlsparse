@@ -95,6 +95,17 @@ void parse_map_init(map_t *dest)
     }
 }
 
+/**
+ * Helper function for initializing a daterange_t object
+ *
+ * @param dest The dest object to initialize
+ */
+void parse_daterange_init(daterange_t *dest)
+{
+    if(dest) {
+        memset(dest, 0, sizeof(daterange_t));
+    }
+}
 
 /**
  * Helper function for initializing a map_t object
@@ -229,6 +240,18 @@ void parse_map_list_init(map_list_t *dest)
 }
 
 /**
+ * Helper function for initializing a datrange_list_t object
+ *
+ * @param dest The dest object to initialize
+ */
+void parse_daterange_list_init(daterange_list_t *dest)
+{
+    if(dest) {
+        memset(dest, 0, sizeof(daterange_list_t));
+    }
+}
+
+/**
  * Helper function for initializing a string_list_t object
  *
  * @param dest The dest object to initialize
@@ -237,6 +260,18 @@ void parse_string_list_init(string_list_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(string_list_t));
+    }
+}
+
+/**
+ * Helper function for initializing a param_list_t object
+ *
+ * @param dest The dest object to initialize
+ */
+void parse_param_list_init(param_list_t *dest)
+{
+    if(dest) {
+        memset(dest, 0, sizeof(param_list_t));
     }
 }
 
@@ -360,6 +395,30 @@ void parse_map_term(map_t *dest)
 }
 
 /**
+ * Helper function for terminating a daterange_t.
+ * This will free any properties on the object resetting the values, but won't
+ * try to free the object itself.
+ * To reuse the object call the corresponding init function after termination.
+ *
+ * @param dest The object to cleanup
+ */
+void parse_daterange_term(daterange_t *dest)
+{
+    if(dest) {
+        char **params[] = {
+            &dest->id,
+            &dest->klass,
+            &dest->scte35_cmd,
+            &dest->scte35_out,
+            &dest->scte35_in,
+        };
+
+        parse_param_term(params, 1);
+        parse_param_list_term(&dest->client_attributes);
+    }
+}
+
+/**
  * Helper function for terminating a map_t.
  * This will free any properties on the object resetting the values, but won't
  * try to free the object itself.
@@ -463,7 +522,6 @@ void parse_segment_list_term(segment_list_t *dest)
  */
 void parse_session_data_list_term(session_data_list_t *dest)
 {
-
     if(dest) {
         if(dest->data) {
             parse_session_data_term(dest->data);
@@ -555,6 +613,31 @@ void parse_map_list_term(map_list_t *dest)
 }
 
 /**
+ * Helper function for terminating a daterange_list_t.
+ * This will free any properties on the object resetting the values, but won't
+ * try to free the object itself.
+ * To reuse the object call the corresponding init function after termination.
+ *
+ * @param dest The object to cleanup
+ */
+void parse_daterange_list_term(daterange_list_t *dest)
+{
+    if(dest) {
+        if(dest->data) {
+            parse_daterange_term(dest->data);
+            hls_free(dest->data);
+        }
+
+        daterange_list_t *ptr = dest->next;
+
+        if(ptr) {
+            parse_daterange_list_term(ptr);
+            hls_free(ptr);
+        }
+    }
+}
+
+/**
  * Helper function for terminating a iframe_stream_inf_list_t.
  * This will free any properties on the object resetting the values, but won't
  * try to free the object itself.
@@ -629,6 +712,32 @@ void parse_string_list_term(string_list_t *dest)
     }
 }
 
+/**
+ * Helper function for terminating a param_list_t.
+ * This will free any properties on the object resetting the values, but won't
+ * try to free the object itself.
+ * To reuse the object call the corresponding init function after termination.
+ *
+ * @param dest The object to cleanup
+ */
+void parse_param_list_term(param_list_t *dest)
+{
+    if(dest) {
+        if(dest->key) {
+            hls_free(dest->key);
+        }
+        if(dest->value) {
+            hls_free(dest->value);
+        }
+
+        param_list_t *ptr = dest->next;
+
+        if(ptr) {
+            parse_param_list_term(ptr);
+            hls_free(ptr);
+        }
+    }
+}
 /**
  * Parse HLS playlist string data into a supplied byte_range_t object.
  * This function can parse the #EXT-X tag version of a byte range, or the
@@ -926,6 +1035,119 @@ int parse_map_tag(const char *src, size_t size, map_t *dest)
         // get past the ="
         pt += 2;
         pt += parse_byte_range(pt, size - (pt - src), &dest->byte_range);
+    }
+
+    return pt - src;
+}
+
+/**
+ * Parse HLS playlist string data into a supplied daterange_t object.
+ *
+ * @param src The srouce of the HLS src
+ * @param size The length of the src string
+ * @param dest The destination object to write the properties to
+ */
+int parse_daterange(const char *src, size_t size, daterange_t *dest)
+{
+    int res = 0;
+
+    // make sure we have some data
+    if(src && src[0] != '\0' && size > 0) {
+        // go through each line parsing the tags
+        const char *pt = &src[0];
+
+        int dif;
+        while(!(*pt == '\0' ||
+                *pt == '\r' ||
+                *pt == '\n' ||
+                pt >= &src[size])) {
+            // skip comma characters in between the attributes
+            if(*pt == ',' || *pt == '=' || *pt == ':') {
+                ++pt;
+            } else {
+                dif = parse_daterange_tag(pt, size - (pt - src), dest);
+                pt += dif > 0 ? dif : 1;
+            }
+        }
+
+        // return the difference between the 2 data points
+        res = pt - src;
+    }
+
+    return res;
+}
+
+/**
+ * Helper function for parsing HLS tags and setting values on the supplied object
+ *
+ * @param src The HLS source string
+ * @param size The size of the source string
+ * @param dest The destination object to write the value to
+ */
+int parse_daterange_tag(const char *src, size_t size, daterange_t *dest)
+{
+    if(!src || !size || !dest) {
+        return 0;
+    }
+
+    const char *pt = src;
+
+    if(EQUAL(pt, ID)) {
+        ++pt;
+        parse_attrib_str(pt, &dest->id, size - (pt - src));
+    } else if(EQUAL(pt, CLASS)) {
+        ++pt;
+        parse_attrib_str(pt, &dest->klass, size - (pt - src));
+    } else if(EQUAL(pt, STARTDATE)) {
+        ++pt; // get past the '=' sign
+        pt += parse_date(pt, &dest->start_date, size - (pt - src));
+    } else if(EQUAL(pt, ENDDATE)) {
+        ++pt; // get past the '=' sign
+        pt += parse_date(pt, &dest->end_date, size - (pt - src));
+    } else if(EQUAL(pt, DURATION)) {
+        ++pt; // get past the '=' sign
+        pt += parse_str_to_float(pt, &dest->duration, size - (pt - src));
+    } else if(EQUAL(pt, PLANNEDDURATION)) {
+        ++pt; // get past the '=' sign
+        pt += parse_str_to_float(pt, &dest->planned_duration, size - (pt - src));
+    } else if(EQUAL(pt, SCTE35CMD)) {
+        ++pt; // get past the '=' sign
+        pt += parse_attrib_data(pt, &dest->scte35_cmd, size - (pt - src));
+    } else if(EQUAL(pt, SCTE35OUT)) {
+        ++pt; // get past the '=' sign
+        pt += parse_attrib_data(pt, &dest->scte35_out, size - (pt - src));
+    } else if(EQUAL(pt, SCTE35IN)) {
+        ++pt; // get past the '=' sign
+        pt += parse_attrib_data(pt, &dest->scte35_in, size - (pt - src));
+    } else if(EQUAL(pt, ENDONNEXT)) {
+        ++pt; // get past the '=' sign
+        if(EQUAL(pt, YES)) {
+            dest->end_on_next = HLS_TRUE;
+        } else if(EQUAL(pt, NO)) {
+            dest->end_on_next = HLS_FALSE;
+        }
+    } else if(pt[0] == 'X' && pt[1] == '-') {
+        // custom client parameter
+        // find the '=' sign so we know where the key ends
+        const char *tmp = pt+1;
+        while(*tmp != '=' && *tmp != '\n' && tmp != '\0' ) {
+            ++tmp;
+        }
+        // get the key string
+        if(tmp - pt > 1) {
+            param_list_t *param = hls_malloc(sizeof(param_list_t));
+            parse_param_list_init(param);
+            // push the new data onto the front of the list
+            param->key = dest->client_attributes.key;
+            param->value = dest->client_attributes.value;
+            param->next = dest->client_attributes.next;
+            dest->client_attributes.next = param;
+            // duplicate the string to create the new key
+            dest->client_attributes.key = str_utils_ndup(pt, tmp-pt);
+            // find the new value string
+            pt = tmp + 1; // get past the '='
+            pt += parse_attrib_str(pt, &dest->client_attributes.value, size - (pt - src));
+        }
     }
 
     return pt - src;

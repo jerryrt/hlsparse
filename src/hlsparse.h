@@ -25,6 +25,7 @@
 #define EXTXDISCONTINUITY           "EXT-X-DISCONTINUITY"
 #define EXTXKEY                     "EXT-X-KEY"
 #define EXTXMAP                     "EXT-X-MAP"
+#define EXTXDATERANGE               "EXT-X-DATERANGE"
 #define EXTXPROGRAMDATETIME         "EXT-X-PROGRAM-DATE-TIME"
 #define EXTXTARGETDURATION          "EXT-X-TARGETDURATION"
 #define EXTXMEDIASEQUENCE           "EXT-X-MEDIA-SEQUENCE"
@@ -59,6 +60,17 @@
 #define KEYFORMAT                   "KEYFORMAT"
 #define KEYFORMATVERSIONS           "KEYFORMATVERSIONS"
 #define BYTERANGE                   "BYTERANGE"
+#define ID                          "ID"
+#define CLASS                       "CLASS"
+#define STARTDATE                   "START-DATE"
+#define ENDDATE                     "END-DATE"
+#define DURATION                    "DURATION"
+#define PLANNEDDURATION             "PLANNED-DURATION"
+#define XCLIENT                     "X-"
+#define SCTE35CMD                   "SCTE35-CMD"
+#define SCTE35OUT                   "SCTE35-OUT"
+#define SCTE35IN                    "SCTE35-IN"
+#define ENDONNEXT                   "END-ON-NEXT"
 #define TYPE                        "TYPE"
 #define GROUPID                     "GROUP-ID"
 #define NAME                        "NAME"
@@ -124,6 +136,12 @@ typedef struct string_list {
     struct string_list *next;
 } string_list_t;
 
+typedef struct param_list {
+    char *key;
+    char *value;
+    struct param_list *next;
+} param_list_t;
+
 typedef struct {
     int n, o;
 } byte_range_t;
@@ -175,6 +193,20 @@ typedef struct {
     char *uri;
     byte_range_t byte_range;
 } map_t;
+
+typedef struct {
+    char *id;
+    char *klass;
+    timestamp_t start_date;
+    timestamp_t end_date;
+    float duration;
+    float planned_duration;
+    param_list_t client_attributes;
+    char *scte35_cmd;
+    char *scte35_out;
+    char *scte35_in;
+    bool_t end_on_next;
+} daterange_t;
 
 typedef struct {
     int type;
@@ -252,6 +284,12 @@ typedef struct map_list {
     map_t                           *data;
     struct map_list                 *next;
 } map_list_t;
+
+typedef struct daterange_list {
+    daterange_t                     *data;
+    struct daterange_list           *next;
+} daterange_list_t;
+
 typedef struct {
     int                         version;
     char                        *uri;
@@ -272,6 +310,7 @@ typedef struct {
     int                         nb_segments;
     int                         nb_keys;
     int                         nb_maps;
+    int                         nb_dateranges;
     int                         nb_custom_tags;
     int                         playlist_type;
     int                         discontinuity_sequence;
@@ -291,6 +330,7 @@ typedef struct {
     segment_list_t              segments;
     key_list_t                  keys;
     map_list_t                  maps;
+    daterange_list_t            dateranges;
     string_list_t               custom_tags;
     segment_t                   *last_segment;                  
 } media_playlist_t;
