@@ -63,6 +63,27 @@ void map_init_test(void)
     parse_map_init(NULL);
 }
 
+void daterange_init_test(void)
+{
+    daterange_t daterange;
+    parse_daterange_init(&daterange);
+    CU_ASSERT_EQUAL(daterange.id, NULL);
+    CU_ASSERT_EQUAL(daterange.klass, NULL);
+    CU_ASSERT_EQUAL(daterange.start_date, 0);
+    CU_ASSERT_EQUAL(daterange.end_date, 0);
+    CU_ASSERT_EQUAL(daterange.duration, 0);
+    CU_ASSERT_EQUAL(daterange.planned_duration, 0);
+    CU_ASSERT_EQUAL(daterange.client_attributes.key, NULL);
+    CU_ASSERT_EQUAL(daterange.client_attributes.value, NULL);
+    CU_ASSERT_EQUAL(daterange.client_attributes.next, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_cmd, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_out, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_in, NULL);
+    CU_ASSERT_EQUAL(daterange.end_on_next, HLS_FALSE);
+
+    parse_map_init(NULL);
+}
+
 void media_init_test(void)
 {
     media_t media;
@@ -210,6 +231,39 @@ void map_term_test(void)
 
     parse_map_term(&map);
     CU_ASSERT_EQUAL(map.uri, NULL);
+}
+
+void daterange_term_test(void)
+{
+    daterange_t daterange;
+    parse_daterange_init(&daterange);
+
+    // make sure we don't crash
+    parse_daterange_term(NULL);
+    parse_daterange_term(&daterange);
+
+    parse_daterange_init(&daterange);
+    daterange.id = str_utils_dup("id");
+    daterange.klass = str_utils_dup("klass");
+    daterange.client_attributes.key = str_utils_dup("key");
+    daterange.client_attributes.value = str_utils_dup("value");
+    daterange.client_attributes.next = (param_list_t*) hls_malloc(sizeof(param_list_t));
+    parse_param_list_init(daterange.client_attributes.next);
+    daterange.client_attributes.next->key = str_utils_dup("key");
+    daterange.client_attributes.next->value = str_utils_dup("value");
+    daterange.scte35_cmd = str_utils_dup("scte35_cmd");
+    daterange.scte35_out = str_utils_dup("scte35_out");
+    daterange.scte35_in = str_utils_dup("scte35_in");
+
+    parse_daterange_term(&daterange);
+    CU_ASSERT_EQUAL(daterange.id, NULL);
+    CU_ASSERT_EQUAL(daterange.klass, NULL);
+    CU_ASSERT_EQUAL(daterange.client_attributes.key, NULL);
+    CU_ASSERT_EQUAL(daterange.client_attributes.value, NULL);
+    CU_ASSERT_EQUAL(daterange.client_attributes.next, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_cmd, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_out, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_in, NULL);
 }
 
 void media_term_test(void)
@@ -613,7 +667,7 @@ void parse_start_test(void)
 void setup(void)
 {
     hlsparse_global_init();
-    
+
     suite("parser_tags_init", NULL, NULL);
     test("byte_range_init", byte_range_init_test);
     test("ext_inf_init", ext_inf_init_test);
@@ -621,6 +675,7 @@ void setup(void)
     test("resolution_init", resolution_init_test);
     test("key_init", key_init_test);
     test("map_init", map_init_test);
+    test("daterange_init", daterange_init_test);
     test("media_init", media_init_test);
     test("segment_init", segment_init_test);
     test("session_data_init", session_data_init_test);
@@ -631,6 +686,7 @@ void setup(void)
     test("iframe_iframe_stream_inf_term", iframe_stream_inf_term_test);
     test("key_term", key_term_test);
     test("map_term", map_term_test);
+    test("daterange_term", daterange_term_test);
     test("media_term", media_term_test);
     test("segment_term", segment_term_test);
     test("session_data_term", session_data_term_test);

@@ -413,7 +413,7 @@ void parse_daterange_term(daterange_t *dest)
             &dest->scte35_in,
         };
 
-        parse_param_term(params, 1);
+        parse_param_term(params, 5);
         parse_param_list_term(&dest->client_attributes);
     }
 }
@@ -725,12 +725,15 @@ void parse_param_list_term(param_list_t *dest)
     if(dest) {
         if(dest->key) {
             hls_free(dest->key);
+            dest->key = NULL;
         }
         if(dest->value) {
             hls_free(dest->value);
+            dest->value = NULL;
         }
 
         param_list_t *ptr = dest->next;
+        dest->next = NULL;
 
         if(ptr) {
             parse_param_list_term(ptr);
