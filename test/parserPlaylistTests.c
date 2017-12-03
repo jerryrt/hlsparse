@@ -53,9 +53,9 @@ void playlist_parse_test(void)
     const char *src = "#EXTM3U\n"\
 "#EXT-X-VERSION:7\n"\
 "#EXT-X-MEDIA:TYPE=VIDEO,URI=\"http://www.test.com\",GROUP-ID=\"groupId\",NAME=\"media\"\n"\
-"#EXT-X-STREAM-INF:BANDWIDTH=900000,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=1280x720\n"\
+"#EXT-X-STREAM-INF:BANDWIDTH=900000,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=1280x720,HDCP-LEVEL=TYPE-0\n"\
 "/path/to/stream_inf/900.m3u8\n"\
-"#EXT-X-STREAM-INF:BANDWIDTH=1500000,CODECS=\"mp4a.40.2.avc1.4d401e\",RESOLUTION=1920x1080\n"\
+"#EXT-X-STREAM-INF:BANDWIDTH=1500000,CODECS=\"mp4a.40.2.avc1.4d401e\",RESOLUTION=1920x1080,HDCP-LEVEL=NONE\n"\
 "/path/to/stream_inf/1500.m3u8\n"\
 "#EXT-X-I-FRAME-STREAM-INF:URI=\"http://www.test.com\",BANDWIDTH=900000\n"\
 "#EXT-X-SESSION-DATA:DATA-ID=\"com.example.movie.title\",VALUE=\"value\",URI=\"http://www.test.com/data.json\""\

@@ -52,6 +52,7 @@
 #define VIDEO                       "VIDEO"
 #define URI                         "URI"
 #define FRAMERATE                   "FRAME-RATE"
+#define HDCPLEVEL                   "HDCP-LEVEL"
 #define AUDIO                       "AUDIO"
 #define SUBTITLES                   "SUBTITLES"
 #define CLOSEDCAPTIONS              "CLOSED-CAPTIONS"
@@ -95,6 +96,8 @@
 #define PRECISE                     "PRECISE"
 #define VOD                         "VOD"
 #define EVENT                       "EVENT"
+#define TYPE0                       "TYPE-0"
+#define NONE                        "NONE"
 
 // HLS tag enums
 #define KEY_METHOD_NONE             0
@@ -125,6 +128,9 @@
 #define PARAM_TYPE_DATA             1
 #define PARAM_TYPE_STRING           2
 #define PARAM_TYPE_FLOAT            3
+
+#define HDCP_LEVEL_NONE             0
+#define HDCP_LEVEL_TYPE0            1
 
 #ifdef __cplusplus
 extern "C" {
@@ -179,6 +185,7 @@ typedef struct {
 
 typedef struct {
     int program_id;
+    int hdcp_level;
     float bandwidth;
     float avg_bandwidth;
     float frame_rate;
@@ -190,6 +197,7 @@ typedef struct {
 
 typedef struct {
     int program_id;
+    int hdcp_level;
     float bandwidth;
     float avg_bandwidth;
     float frame_rate;

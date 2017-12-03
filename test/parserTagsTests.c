@@ -108,6 +108,25 @@ void media_init_test(void)
     parse_media_init(NULL);
 }
 
+void stream_inf_init_test(void)
+{
+    stream_inf_t stream_inf;
+    parse_stream_inf_init(&stream_inf);
+    CU_ASSERT_EQUAL(stream_inf.bandwidth, 0.f);
+    CU_ASSERT_EQUAL(stream_inf.avg_bandwidth, 0.f);
+    CU_ASSERT_EQUAL(stream_inf.codecs, NULL);
+    CU_ASSERT_EQUAL(stream_inf.resolution.width, 0);
+    CU_ASSERT_EQUAL(stream_inf.resolution.height, 0);
+    CU_ASSERT_EQUAL(stream_inf.audio, NULL);
+    CU_ASSERT_EQUAL(stream_inf.subtitles, NULL);
+    CU_ASSERT_EQUAL(stream_inf.closed_captions, NULL);
+    CU_ASSERT_EQUAL(stream_inf.video, NULL);
+    CU_ASSERT_EQUAL(stream_inf.uri, NULL);
+    CU_ASSERT_EQUAL(stream_inf.frame_rate, 0);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_NONE);
+
+    parse_stream_inf_init(NULL);
+}
 void iframe_stream_inf_init_test(void)
 {
     iframe_stream_inf_t stream_inf;
@@ -119,6 +138,7 @@ void iframe_stream_inf_init_test(void)
     CU_ASSERT_EQUAL(stream_inf.resolution.height, 0);
     CU_ASSERT_EQUAL(stream_inf.video, NULL);
     CU_ASSERT_EQUAL(stream_inf.uri, NULL);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_NONE);
 
     parse_iframe_stream_inf_init(NULL);
 }
@@ -178,6 +198,30 @@ void ext_inf_term_test(void)
     ext_inf.title = str_utils_dup("title");
     parse_ext_inf_term(&ext_inf);
     CU_ASSERT_EQUAL(NULL, ext_inf.title);
+}
+
+void stream_inf_term_test(void)
+{
+    stream_inf_t stream_inf;
+    parse_stream_inf_init(&stream_inf);
+    parse_stream_inf_term(&stream_inf);
+
+    parse_stream_inf_term(NULL);
+
+    parse_stream_inf_init(&stream_inf);
+    stream_inf.codecs = str_utils_dup("codecs");
+    stream_inf.video = str_utils_dup("video");
+    stream_inf.audio = str_utils_dup("audio");
+    stream_inf.uri = str_utils_dup("uri");
+    stream_inf.subtitles = str_utils_dup("subtitles");
+    stream_inf.closed_captions = str_utils_dup("closed captions");
+    parse_stream_inf_term(&stream_inf);
+    CU_ASSERT_EQUAL(stream_inf.codecs, NULL);
+    CU_ASSERT_EQUAL(stream_inf.video, NULL);
+    CU_ASSERT_EQUAL(stream_inf.audio, NULL);
+    CU_ASSERT_EQUAL(stream_inf.uri, NULL);
+    CU_ASSERT_EQUAL(stream_inf.closed_captions, NULL);
+    CU_ASSERT_EQUAL(stream_inf.subtitles, NULL);
 }
 
 void iframe_stream_inf_term_test(void)
@@ -374,6 +418,40 @@ void parse_byte_range_test(void)
     CU_ASSERT_EQUAL(byte_range.o, 64);
 }
 
+void parse_stream_inf_test(void)
+{
+    stream_inf_t stream_inf;
+    parse_stream_inf_init(&stream_inf);
+
+    int res = parse_stream_inf("", 0, &stream_inf);
+    CU_ASSERT_EQUAL(res, 0);
+
+    res = parse_stream_inf(NULL, 0, &stream_inf);
+    CU_ASSERT_EQUAL(res, 0);
+
+    const char *src = "invalid stream inf";
+    res = parse_stream_inf(src, strlen(src), &stream_inf);
+    CU_ASSERT_EQUAL(res, strlen(src));
+
+    const char *src2 = "#EXT-X-STREAM-INF:BANDWIDTH=86000,AVERAGE-BANDWIDTH=90000,FRAME-RATE=29.97,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=320x240,VIDEO=\"video_value\",AUDIO=\"audio_value\",SUBTITLES=\"subtitles\",CLOSED-CAPTIONS=\"closed_captions\",HDCP-LEVEL=TYPE-0";
+
+    res = parse_stream_inf(src2, strlen(src2), &stream_inf);
+    CU_ASSERT_EQUAL(res, strlen(src2));
+    CU_ASSERT_EQUAL(stream_inf.bandwidth, 86000);
+    CU_ASSERT_EQUAL(stream_inf.avg_bandwidth, 90000);
+    CU_ASSERT_EQUAL(stream_inf.frame_rate, 29.97f);
+    CU_ASSERT_EQUAL(strcmp("mp4a.40.2,avc1.4d401e", stream_inf.codecs), 0);
+    CU_ASSERT_EQUAL(stream_inf.resolution.width, 320);
+    CU_ASSERT_EQUAL(stream_inf.resolution.height, 240);
+    CU_ASSERT_EQUAL(strcmp("audio_value", stream_inf.audio), 0);
+    CU_ASSERT_EQUAL(strcmp("video_value", stream_inf.video), 0);
+    CU_ASSERT_EQUAL(strcmp("closed_captions", stream_inf.closed_captions), 0);
+    CU_ASSERT_EQUAL(strcmp("subtitles", stream_inf.subtitles), 0);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_TYPE0);
+
+    parse_stream_inf_term(&stream_inf);
+}
+
 void parse_iframe_stream_inf_test(void)
 {
     iframe_stream_inf_t stream_inf;
@@ -389,7 +467,7 @@ void parse_iframe_stream_inf_test(void)
     res = parse_iframe_stream_inf(src, strlen(src), &stream_inf);
     CU_ASSERT_EQUAL(res, strlen(src));
 
-    const char *src2 = "#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=86000,URI=\"low/iframe.m3u8\",AVERAGE-BANDWIDTH=90000,FRAME-RATE=29.97,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=320x240,VIDEO=\"video_value\"";
+    const char *src2 = "#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=86000,URI=\"low/iframe.m3u8\",AVERAGE-BANDWIDTH=90000,FRAME-RATE=29.97,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=320x240,VIDEO=\"video_value\",HDCP-LEVEL=TYPE-0";
 
     res = parse_iframe_stream_inf(src2, strlen(src2), &stream_inf);
     CU_ASSERT_EQUAL(res, strlen(src2));
@@ -400,6 +478,7 @@ void parse_iframe_stream_inf_test(void)
     CU_ASSERT_EQUAL(stream_inf.resolution.width, 320);
     CU_ASSERT_EQUAL(stream_inf.resolution.height, 240);
     CU_ASSERT_EQUAL(strcmp("video_value", stream_inf.video), 0);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_TYPE0);
 
     parse_iframe_stream_inf_term(&stream_inf);
 }
@@ -757,6 +836,7 @@ void setup(void)
     suite("parser_tags_init", NULL, NULL);
     test("byte_range_init", byte_range_init_test);
     test("ext_inf_init", ext_inf_init_test);
+    test("stream_inf_init", stream_inf_init_test);
     test("iframe_stream_inf_init", iframe_stream_inf_init_test);
     test("resolution_init", resolution_init_test);
     test("key_init", key_init_test);
@@ -769,7 +849,8 @@ void setup(void)
 
     suite("parser_tags_term", NULL, NULL);
     test("ext_inf_term", ext_inf_term_test);
-    test("iframe_iframe_stream_inf_term", iframe_stream_inf_term_test);
+    test("stream_inf_term", stream_inf_term_test);
+    test("iframe_stream_inf_term", iframe_stream_inf_term_test);
     test("key_term", key_term_test);
     test("map_term", map_term_test);
     test("daterange_term", daterange_term_test);
@@ -779,6 +860,7 @@ void setup(void)
 
     suite("parser_tags_parse", NULL, NULL);
     test("parse_byte_range", parse_byte_range_test);
+    test("parse_stream_inf", parse_stream_inf_test);
     test("parse_iframe_stream_inf", parse_iframe_stream_inf_test);
     test("parse_resolution", parse_resolution_test);
     test("parse_key", parse_key_test);

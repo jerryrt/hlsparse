@@ -873,6 +873,13 @@ int parse_iframe_stream_inf_tag(
     } else if(EQUAL(pt, FRAMERATE)) {
         ++pt; // get past the '=' sign
         pt += parse_str_to_float(pt, &dest->frame_rate, size - (pt - src));
+    } else if(EQUAL(pt, HDCPLEVEL)) {
+        ++pt; // get past the '=' sign
+        if(EQUAL(pt, TYPE0)) {
+            dest->hdcp_level = HDCP_LEVEL_TYPE0;
+        } else if(EQUAL(pt, NONE)) {
+            dest->hdcp_level = HDCP_LEVEL_NONE;
+        }
     }
     // return the length of characters we have parsed
     return pt - src;
@@ -1579,6 +1586,16 @@ int parse_stream_inf_tag(const char *src, size_t size, stream_inf_t *dest)
     } else if(EQUAL(pt, CLOSEDCAPTIONS)) {
         ++pt; // get past the '=' sign
         pt += parse_attrib_str(pt, &dest->closed_captions, size - (pt - src));
+    } else if(EQUAL(pt, FRAMERATE)) {
+        ++pt; // get past the '=' sign
+        pt += parse_str_to_float(pt, &dest->frame_rate, size - (pt - src));
+    } else if(EQUAL(pt, HDCPLEVEL)) {
+        ++pt; // get past the '=' sign
+        if(EQUAL(pt, TYPE0)) {
+            dest->hdcp_level = HDCP_LEVEL_TYPE0;
+        } else if(EQUAL(pt, NONE)) {
+            dest->hdcp_level = HDCP_LEVEL_NONE;
+        }
     }
 
     // return the length of characters we have parsed
