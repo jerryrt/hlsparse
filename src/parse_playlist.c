@@ -254,6 +254,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
 
         segment->key_index = dest->nb_keys - 1;
         segment->map_index = dest->nb_maps - 1;
+        segment->daterange_index = dest->nb_dateranges - 1;
 
         segment->sequence_num = dest->next_segment_media_sequence;
         ++(dest->next_segment_media_sequence);
@@ -361,9 +362,12 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
         daterange_t *daterange = hls_malloc(sizeof(daterange_t));;
         parse_daterange_init(daterange);
         pt += parse_daterange(pt, size - (pt - src), daterange);
+        daterange->pdt = dest->next_segment_pdt;
+
         daterange_list_t *next = &dest->dateranges;
 
         while(next) {
+
             if(!next->data) {
                 next->data = daterange;
                 break;

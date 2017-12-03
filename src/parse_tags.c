@@ -413,6 +413,10 @@ void parse_daterange_term(daterange_t *dest)
             &dest->scte35_in,
         };
 
+        dest->scte35_cmd_size = 0;
+        dest->scte35_out_size = 0;
+        dest->scte35_in_size = 0;
+        
         parse_param_term(params, 5);
         parse_param_list_term(&dest->client_attributes);
     }
@@ -732,6 +736,7 @@ void parse_param_list_term(param_list_t *dest)
         }
         dest->value.data = NULL;
         dest->value_type = PARAM_TYPE_NONE;
+        dest->value_size = 0;
 
         param_list_t *ptr = dest->next;
         dest->next = NULL;
@@ -1117,13 +1122,19 @@ int parse_daterange_tag(const char *src, size_t size, daterange_t *dest)
         pt += parse_str_to_float(pt, &dest->planned_duration, size - (pt - src));
     } else if(EQUAL(pt, SCTE35CMD)) {
         ++pt; // get past the '=' sign
-        pt += parse_attrib_data(pt, &dest->scte35_cmd, size - (pt - src));
+        dest->scte35_cmd_size = parse_attrib_data(pt, &dest->scte35_cmd, size - (pt - src));
+        pt += dest->scte35_cmd_size;
+        dest->scte35_cmd_size = (dest->scte35_cmd_size - 2) / 2; // minus '0x' / 2 characters per byte e.g. 'AA'
     } else if(EQUAL(pt, SCTE35OUT)) {
         ++pt; // get past the '=' sign
-        pt += parse_attrib_data(pt, &dest->scte35_out, size - (pt - src));
+        dest->scte35_out_size = parse_attrib_data(pt, &dest->scte35_out, size - (pt - src));
+        pt += dest->scte35_out_size;
+        dest->scte35_out_size = (dest->scte35_out_size - 2) / 2; // minus '0x' / 2 characters per byte e.g. 'AA'
     } else if(EQUAL(pt, SCTE35IN)) {
         ++pt; // get past the '=' sign
-        pt += parse_attrib_data(pt, &dest->scte35_in, size - (pt - src));
+        dest->scte35_in_size = parse_attrib_data(pt, &dest->scte35_in, size - (pt - src));
+        pt += dest->scte35_in_size;
+        dest->scte35_in_size = (dest->scte35_in_size - 2) / 2; // minus '0x' / 2 characters per byte e.g. 'AA'
     } else if(EQUAL(pt, ENDONNEXT)) {
         ++pt; // get past the '=' sign
         if(EQUAL(pt, YES)) {
@@ -1163,13 +1174,18 @@ int parse_daterange_tag(const char *src, size_t size, daterange_t *dest)
             pt = tmp + 1; // get past the '='
             if(*pt == '"') {
                 param->value_type = PARAM_TYPE_STRING;
-                pt += parse_attrib_str(pt, &param->value.data, size - (pt - src));
+                param->value_size = parse_attrib_str(pt, &param->value.data, size - (pt - src));
+                pt += param->value_size;
+                param->value_size--; // parse always parses an extra end byte
             }else if(*pt == '0' && (pt[1] == 'x' || pt[1] == 'X')) {
                 param->value_type = PARAM_TYPE_DATA;
-                pt += parse_attrib_data(pt, &param->value.data, size - (pt - src));
+                param->value_size = parse_attrib_data(pt, &param->value.data, size - (pt - src));
+                pt += param->value_size;
+                param->value_size = (param->value_size - 2) / 2; // minus '0x' / 2 bytes per character
             }else{
                 param->value_type = PARAM_TYPE_FLOAT;
                 pt += parse_str_to_float(pt, &param->value.number, size - (pt - src));
+                param->value_size = 0;
             }
         }
     }

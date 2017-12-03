@@ -79,6 +79,9 @@ void daterange_init_test(void)
     CU_ASSERT_EQUAL(daterange.scte35_cmd, NULL);
     CU_ASSERT_EQUAL(daterange.scte35_out, NULL);
     CU_ASSERT_EQUAL(daterange.scte35_in, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_cmd_size, 0);
+    CU_ASSERT_EQUAL(daterange.scte35_out_size, 0);
+    CU_ASSERT_EQUAL(daterange.scte35_in_size, 0);
     CU_ASSERT_EQUAL(daterange.end_on_next, HLS_FALSE);
 
     parse_map_init(NULL);
@@ -254,8 +257,11 @@ void daterange_term_test(void)
     daterange.client_attributes.next->value_type = PARAM_TYPE_STRING;
     daterange.client_attributes.next->value.data = str_utils_dup("value");
     daterange.scte35_cmd = str_utils_dup("scte35_cmd");
+    daterange.scte35_cmd_size = strlen(daterange.scte35_cmd) + 1;
     daterange.scte35_out = str_utils_dup("scte35_out");
+    daterange.scte35_out_size = strlen(daterange.scte35_out) + 1;
     daterange.scte35_in = str_utils_dup("scte35_in");
+    daterange.scte35_in_size = strlen(daterange.scte35_in) + 1;
 
     parse_daterange_term(&daterange);
     CU_ASSERT_EQUAL(daterange.id, NULL);
@@ -265,8 +271,11 @@ void daterange_term_test(void)
     CU_ASSERT_EQUAL(daterange.client_attributes.value.data, NULL);
     CU_ASSERT_EQUAL(daterange.client_attributes.next, NULL);
     CU_ASSERT_EQUAL(daterange.scte35_cmd, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_cmd_size, 0);
     CU_ASSERT_EQUAL(daterange.scte35_out, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_out_size, 0);
     CU_ASSERT_EQUAL(daterange.scte35_in, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_in_size, 0);
 }
 
 void media_term_test(void)
@@ -504,25 +513,31 @@ void parse_daterange_test(void)
     CU_ASSERT_EQUAL(daterange.planned_duration, 10.5f);
     const char cmd[] = { 0x01, 0x02, 0x03, 0x04 };
     CU_ASSERT_EQUAL(memcmp(daterange.scte35_cmd, cmd, 4), 0);
+    CU_ASSERT_EQUAL(daterange.scte35_cmd_size, 4);
     const char out[] = { 0x05, 0x06, 0x07, 0x08 };
     CU_ASSERT_EQUAL(memcmp(daterange.scte35_out, out, 4), 0);
+    CU_ASSERT_EQUAL(daterange.scte35_out_size, 4);
     const char in[] = { 0x09, 0x0A, 0x0B, 0x0C };
     CU_ASSERT_EQUAL(memcmp(daterange.scte35_in, in, 4), 0);
+    CU_ASSERT_EQUAL(daterange.scte35_in_size, 4);
     CU_ASSERT_EQUAL(daterange.end_on_next, HLS_TRUE);
 
     param_list_t *item = &daterange.client_attributes;
     CU_ASSERT_EQUAL(item->value_type, PARAM_TYPE_STRING);
     CU_ASSERT_EQUAL(strcmp(item->key, "X-COM-TEST-ONE"), 0);
     CU_ASSERT_EQUAL(strcmp(item->value.data, "com.test.one"), 0);
+    CU_ASSERT_EQUAL(item->value_size, 13);
     item = item->next;
     CU_ASSERT_EQUAL(item->value_type, PARAM_TYPE_DATA);
     CU_ASSERT_EQUAL(strcmp(item->key, "X-COM-TEST-TWO"), 0);
     char xcomtwo[] = { 0xAA, 0xBB, 0xCC, 0xDD };
     CU_ASSERT_EQUAL(memcmp(item->value.data, xcomtwo, 4), 0);
+    CU_ASSERT_EQUAL(item->value_size, 4);
     item = item->next;
     CU_ASSERT_EQUAL(item->value_type, PARAM_TYPE_FLOAT);
     CU_ASSERT_EQUAL(strcmp(item->key, "X-COM-TEST-THREE"), 0);
     CU_ASSERT_EQUAL(item->value.number, 1.234f);
+    CU_ASSERT_EQUAL(item->value_size, 0);
     CU_ASSERT_EQUAL(item->next, NULL);
 
     parse_daterange_term(&daterange);

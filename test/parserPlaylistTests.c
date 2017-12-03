@@ -191,6 +191,9 @@ void media_playlist_parse_test(void)
     CU_ASSERT_EQUAL(playlist.start.time_offset, 12.5f);
     CU_ASSERT_EQUAL(playlist.start.precise, HLS_TRUE);
     CU_ASSERT_EQUAL(playlist.nb_segments, 6);
+    CU_ASSERT_EQUAL(playlist.nb_maps, 0);
+    CU_ASSERT_EQUAL(playlist.nb_keys, 2);
+    CU_ASSERT_EQUAL(playlist.nb_dateranges, 0);
 
     segment_list_t *seg = &playlist.segments;
     CU_ASSERT_NOT_EQUAL(seg->data, NULL);
@@ -198,6 +201,7 @@ void media_playlist_parse_test(void)
     CU_ASSERT_EQUAL(seg->data->sequence_num, 0);
     CU_ASSERT_EQUAL(seg->data->key_index, -1);
     CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, -1);
     assert_string_equal(seg->data->title, "segment0", __func__, __LINE__);
     CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
     CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
@@ -216,6 +220,7 @@ void media_playlist_parse_test(void)
     CU_ASSERT_EQUAL(seg->data->sequence_num, 1);
     CU_ASSERT_EQUAL(seg->data->key_index, -1);
     CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, -1);
     CU_ASSERT_EQUAL(seg->data->title, NULL);
     CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
     CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
@@ -234,6 +239,7 @@ void media_playlist_parse_test(void)
     CU_ASSERT_EQUAL(seg->data->sequence_num, 2);
     CU_ASSERT_EQUAL(seg->data->key_index, 0);
     CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, -1);
     assert_string_equal(seg->data->title, "segment2", __func__, __LINE__);
     CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
     CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
@@ -252,6 +258,7 @@ void media_playlist_parse_test(void)
     CU_ASSERT_EQUAL(seg->data->sequence_num, 3);
     CU_ASSERT_EQUAL(seg->data->key_index, 0);
     CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, -1);
     assert_string_equal(seg->data->title, "segment3", __func__, __LINE__);
     CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
     CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
@@ -270,6 +277,7 @@ void media_playlist_parse_test(void)
     CU_ASSERT_EQUAL(seg->data->sequence_num, 4);
     CU_ASSERT_EQUAL(seg->data->key_index, 1);
     CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, -1);
     assert_string_equal(seg->data->title, "segment4", __func__, __LINE__);
     CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_TRUE);
     CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_TRUE);
@@ -288,6 +296,7 @@ void media_playlist_parse_test(void)
     CU_ASSERT_EQUAL(seg->data->sequence_num, 5);
     CU_ASSERT_EQUAL(seg->data->key_index, 1);
     CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, -1);
     assert_string_equal(seg->data->title, "segment5", __func__, __LINE__);
     CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
     CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
@@ -305,10 +314,234 @@ void media_playlist_parse_test(void)
     hlsparse_media_playlist_term(&playlist);
 }
 
+void media_playlist_parse_test2(void)
+{
+    media_playlist_t playlist;
+    hlsparse_media_playlist_init(&playlist);
+
+    const char *src = "#EXTM3U\n"\
+"#EXT-X-VERSION:7\n"\
+"#EXT-X-TARGETDURATION:10\n"\
+"#EXT-X-MEDIA-SEQUENCE:0\n"\
+"#EXT-X-PLAYLIST-TYPE:EVENT\n"\
+"#EXT-X-PROGRAM-DATE-TIME:2010-02-19T12:00:00.000+08:00\n"\
+"#EXT-X-KEY:METHOD=AES-128,URI=\"http://www.example.com/segment2.key\"\n"\
+"#EXT-X-DATERANGE:ID=\"splice-6FFFFFF0\",START-DATE=\"2010-02-19T04:00:00Z\",PLANNED-DURATION=59.993,SCTE35-OUT=0xFC002F0000000000FF000014056FFFFFF000E011622DCAFF000052636200000000000A0008029896F50000008700000000\n"\
+"#EXTINF:10,\n"\
+"http://www.example.com/segment0.ts\n"\
+"#EXTINF:10,\n"\
+"http://www.example.com/segment1.ts\n"\
+"#EXTINF:10,\n"\
+"http://www.example.com/segment2.ts\n"\
+"#EXTINF:10,\n"\
+"http://www.example.com/segment3.ts\n"\
+"#EXTINF:10,\n"\
+"http://www.example.com/segment4.ts\n"\
+"#EXTINF:10,\n"\
+"http://www.example.com/segment5.ts\n"\
+"#EXT-X-DATERANGE:ID=\"splice-6FFFFFF0\",DURATION=59.993,SCTE35-IN=0xFC002A0000000000FF00000F056FFFFFF000401162802E6100000000000A0008029896F50000008700000000\n"\
+"#EXTINF:10,\n"\
+"http://www.example.com/segment6.ts\n"\
+"#EXTINF:10,\n"\
+"http://www.example.com/segment7.ts\n";
+
+    int res = hlsparse_media_playlist(src, strlen(src), &playlist);
+    CU_ASSERT_EQUAL(res, strlen(src))
+    CU_ASSERT_EQUAL(playlist.m3u, HLS_TRUE);
+    CU_ASSERT_EQUAL(playlist.target_duration, 10);
+    CU_ASSERT_EQUAL(playlist.media_sequence, 0);
+    CU_ASSERT_EQUAL(playlist.discontinuity_sequence, 0);
+    CU_ASSERT_EQUAL(playlist.playlist_type, PLAYLIST_TYPE_EVENT);
+    CU_ASSERT_EQUAL(playlist.independent_segments, HLS_FALSE);
+    CU_ASSERT_EQUAL(playlist.iframes_only, HLS_FALSE);
+    CU_ASSERT_EQUAL(playlist.start.time_offset, 0.f);
+    CU_ASSERT_EQUAL(playlist.start.precise, HLS_FALSE);
+    CU_ASSERT_EQUAL(playlist.nb_segments, 8);
+    CU_ASSERT_EQUAL(playlist.nb_maps, 0);
+    CU_ASSERT_EQUAL(playlist.nb_dateranges, 2);
+    CU_ASSERT_EQUAL(playlist.end_list, HLS_FALSE);
+
+    daterange_t *drange = playlist.dateranges.data;
+    CU_ASSERT_EQUAL(drange->pdt, 1266552000000);
+    assert_string_equal(drange->id, "splice-6FFFFFF0", __func__, __LINE__);
+    CU_ASSERT_EQUAL(drange->planned_duration, 59.993f);
+    CU_ASSERT_EQUAL(drange->duration, 0.f);
+    CU_ASSERT_NOT_EQUAL(drange->scte35_out, NULL);
+    CU_ASSERT_EQUAL(drange->scte35_out_size, 49);
+    CU_ASSERT_EQUAL(drange->scte35_in, NULL);
+    CU_ASSERT_EQUAL(drange->scte35_in_size, 0);
+    CU_ASSERT_EQUAL(drange->scte35_cmd, NULL);
+    CU_ASSERT_EQUAL(drange->scte35_cmd_size, 0);
+    CU_ASSERT_EQUAL(drange->klass, NULL);
+    CU_ASSERT_EQUAL(drange->client_attributes.value_type, PARAM_TYPE_NONE);
+
+    drange = playlist.dateranges.next->data;
+    CU_ASSERT_EQUAL(drange->pdt, 1266552060000);
+    assert_string_equal(drange->id, "splice-6FFFFFF0", __func__, __LINE__);
+    CU_ASSERT_EQUAL(drange->planned_duration, 0.f);
+    CU_ASSERT_EQUAL(drange->duration, 59.993f);
+    CU_ASSERT_EQUAL(drange->scte35_out, NULL);
+    CU_ASSERT_EQUAL(drange->scte35_out_size, 0);
+    CU_ASSERT_NOT_EQUAL(drange->scte35_in, NULL);
+    CU_ASSERT_EQUAL(drange->scte35_in_size, 44);
+    CU_ASSERT_EQUAL(drange->scte35_cmd, NULL);
+    CU_ASSERT_EQUAL(drange->scte35_cmd_size, 0);
+    CU_ASSERT_EQUAL(drange->klass, NULL);
+    CU_ASSERT_EQUAL(drange->client_attributes.value_type, PARAM_TYPE_NONE);
+
+    segment_list_t *seg = &playlist.segments;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "http://www.example.com/segment0.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 0);
+    CU_ASSERT_EQUAL(seg->data->key_index, 0);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, 0);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1266552000000);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1266552010000);
+    CU_ASSERT_EQUAL(seg->data->duration, 10.f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.data, NULL);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next, NULL);
+    
+    seg = seg->next;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "http://www.example.com/segment1.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 1);
+    CU_ASSERT_EQUAL(seg->data->key_index, 0);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, 0);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1266552010000);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1266552020000);
+    CU_ASSERT_EQUAL(seg->data->duration, 10.f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.data, NULL);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next, NULL);
+
+    seg = seg->next;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "http://www.example.com/segment2.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 2);
+    CU_ASSERT_EQUAL(seg->data->key_index, 0);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, 0);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1266552020000);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1266552030000);
+    CU_ASSERT_EQUAL(seg->data->duration, 10.f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.data, NULL);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next, NULL);
+
+    seg = seg->next;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "http://www.example.com/segment3.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 3);
+    CU_ASSERT_EQUAL(seg->data->key_index, 0);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, 0);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1266552030000);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1266552040000);
+    CU_ASSERT_EQUAL(seg->data->duration, 10.f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.data, NULL);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next, NULL);
+
+    seg = seg->next;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "http://www.example.com/segment4.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 4);
+    CU_ASSERT_EQUAL(seg->data->key_index, 0);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, 0);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1266552040000);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1266552050000);
+    CU_ASSERT_EQUAL(seg->data->duration, 10.f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.data, NULL);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next, NULL);
+
+    seg = seg->next;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "http://www.example.com/segment5.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 5);
+    CU_ASSERT_EQUAL(seg->data->key_index, 0);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, 0);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1266552050000);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1266552060000);
+    CU_ASSERT_EQUAL(seg->data->duration, 10.f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.data, NULL);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next, NULL);
+
+    seg = seg->next;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "http://www.example.com/segment6.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 6);
+    CU_ASSERT_EQUAL(seg->data->key_index, 0);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, 1);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1266552060000);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1266552070000);
+    CU_ASSERT_EQUAL(seg->data->duration, 10.f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.data, NULL);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next, NULL);
+
+    seg = seg->next;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "http://www.example.com/segment7.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 7);
+    CU_ASSERT_EQUAL(seg->data->key_index, 0);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, 1);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1266552070000);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1266552080000);
+    CU_ASSERT_EQUAL(seg->data->duration, 10.f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.data, NULL);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next, NULL);
+
+    seg = seg->next;
+    CU_ASSERT_EQUAL(seg, NULL);
+
+    hlsparse_media_playlist_term(&playlist);
+}
 void setup(void)
 {
     hlsparse_global_init();
-    
+
     suite("parser_playlist", NULL, NULL);
     test("playlist_init", playlist_init_test);
     test("playlist_term", playlist_term_test);
@@ -316,5 +549,6 @@ void setup(void)
     test("media_playlist_init", media_playlist_init_test);
     test("media_playlist_term", media_playlist_term_test);
     test("media_playlist_parse", media_playlist_parse_test);
+    test("media_playlist_parse2", media_playlist_parse_test2);
 }
 

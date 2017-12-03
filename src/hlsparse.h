@@ -150,6 +150,7 @@ typedef struct param_list {
         float number;           // floating point number value.
     } value;
     param_type_t value_type;    // type of content stored in value.
+    size_t value_size;          // number of bytes used by value.data.
     struct param_list *next;    // next item in linked list
 } param_list_t;
 
@@ -206,6 +207,7 @@ typedef struct {
 } map_t;
 
 typedef struct {
+    timestamp_t pdt; // timestamp that the EXT-X-DATERANGE appeared in the playlist
     char *id;
     char *klass;
     timestamp_t start_date;
@@ -216,6 +218,9 @@ typedef struct {
     char *scte35_cmd;
     char *scte35_out;
     char *scte35_in;
+    size_t scte35_cmd_size;
+    size_t scte35_out_size;
+    size_t scte35_in_size;
     bool_t end_on_next;
 } daterange_t;
 
@@ -238,6 +243,7 @@ typedef struct {
     int sequence_num;
     int key_index;
     int map_index;
+    int daterange_index;
     float duration;
     char *title;
     char *uri;
