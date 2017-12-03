@@ -25,6 +25,7 @@
 #define EXTXDISCONTINUITY           "EXT-X-DISCONTINUITY"
 #define EXTXKEY                     "EXT-X-KEY"
 #define EXTXMAP                     "EXT-X-MAP"
+#define EXTXDATERANGE               "EXT-X-DATERANGE"
 #define EXTXPROGRAMDATETIME         "EXT-X-PROGRAM-DATE-TIME"
 #define EXTXTARGETDURATION          "EXT-X-TARGETDURATION"
 #define EXTXMEDIASEQUENCE           "EXT-X-MEDIA-SEQUENCE"
@@ -51,6 +52,7 @@
 #define VIDEO                       "VIDEO"
 #define URI                         "URI"
 #define FRAMERATE                   "FRAME-RATE"
+#define HDCPLEVEL                   "HDCP-LEVEL"
 #define AUDIO                       "AUDIO"
 #define SUBTITLES                   "SUBTITLES"
 #define CLOSEDCAPTIONS              "CLOSED-CAPTIONS"
@@ -59,6 +61,17 @@
 #define KEYFORMAT                   "KEYFORMAT"
 #define KEYFORMATVERSIONS           "KEYFORMATVERSIONS"
 #define BYTERANGE                   "BYTERANGE"
+#define ID                          "ID"
+#define CLASS                       "CLASS"
+#define STARTDATE                   "START-DATE"
+#define ENDDATE                     "END-DATE"
+#define DURATION                    "DURATION"
+#define PLANNEDDURATION             "PLANNED-DURATION"
+#define XCLIENT                     "X-"
+#define SCTE35CMD                   "SCTE35-CMD"
+#define SCTE35OUT                   "SCTE35-OUT"
+#define SCTE35IN                    "SCTE35-IN"
+#define ENDONNEXT                   "END-ON-NEXT"
 #define TYPE                        "TYPE"
 #define GROUPID                     "GROUP-ID"
 #define NAME                        "NAME"
@@ -76,12 +89,15 @@
 #define CC4                         "CC4"
 #define SERVICE                     "SERVICE"
 #define CHARACTERISTICS             "CHARACTERISTICS"
+#define CHANNELS                    "CHANNELS"
 #define DATAID                      "DATA-ID"
 #define VALUE                       "VALUE"
 #define TIMEOFFSET                  "TIME-OFFSET"
 #define PRECISE                     "PRECISE"
 #define VOD                         "VOD"
 #define EVENT                       "EVENT"
+#define TYPE0                       "TYPE-0"
+#define NONE                        "NONE"
 
 // HLS tag enums
 #define KEY_METHOD_NONE             0
@@ -108,6 +124,14 @@
 #define PLAYLIST_TYPE_EVENT         1
 #define PLAYLIST_TYPE_INVALID       2
 
+#define PARAM_TYPE_NONE             0
+#define PARAM_TYPE_DATA             1
+#define PARAM_TYPE_STRING           2
+#define PARAM_TYPE_FLOAT            3
+
+#define HDCP_LEVEL_NONE             0
+#define HDCP_LEVEL_TYPE0            1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -123,6 +147,19 @@ typedef struct string_list {
     char *data;
     struct string_list *next;
 } string_list_t;
+
+typedef int param_type_t;
+
+typedef struct param_list {
+    char *key;                  // name of the a parameter entry.
+    union {
+        char *data;             // string or byte data value.
+        float number;           // floating point number value.
+    } value;
+    param_type_t value_type;    // type of content stored in value.
+    size_t value_size;          // number of bytes used by value.data.
+    struct param_list *next;    // next item in linked list
+} param_list_t;
 
 typedef struct {
     int n, o;
@@ -148,6 +185,7 @@ typedef struct {
 
 typedef struct {
     int program_id;
+    int hdcp_level;
     float bandwidth;
     float avg_bandwidth;
     float frame_rate;
@@ -159,6 +197,7 @@ typedef struct {
 
 typedef struct {
     int program_id;
+    int hdcp_level;
     float bandwidth;
     float avg_bandwidth;
     float frame_rate;
@@ -177,6 +216,24 @@ typedef struct {
 } map_t;
 
 typedef struct {
+    timestamp_t pdt; // timestamp that the EXT-X-DATERANGE appeared in the playlist
+    char *id;
+    char *klass;
+    timestamp_t start_date;
+    timestamp_t end_date;
+    float duration;
+    float planned_duration;
+    param_list_t client_attributes;
+    char *scte35_cmd;
+    char *scte35_out;
+    char *scte35_in;
+    size_t scte35_cmd_size;
+    size_t scte35_out_size;
+    size_t scte35_in_size;
+    bool_t end_on_next;
+} daterange_t;
+
+typedef struct {
     int type;
     int instream_id;
     int service_n;
@@ -189,12 +246,14 @@ typedef struct {
     char *assoc_language;
     char *uri;
     char *characteristics;
+    char *channels;
 } media_t;
 
 typedef struct {
     int sequence_num;
     int key_index;
     int map_index;
+    int daterange_index;
     float duration;
     char *title;
     char *uri;
@@ -252,6 +311,12 @@ typedef struct map_list {
     map_t                           *data;
     struct map_list                 *next;
 } map_list_t;
+
+typedef struct daterange_list {
+    daterange_t                     *data;
+    struct daterange_list           *next;
+} daterange_list_t;
+
 typedef struct {
     int                         version;
     char                        *uri;
@@ -263,6 +328,8 @@ typedef struct {
     stream_inf_list_t           stream_infs;
     iframe_stream_inf_list_t    iframe_stream_infs; 
     string_list_t               custom_tags;
+    key_list_t                  session_keys;
+    int                         nb_session_keys;
 } master_t;
 
 typedef struct {
@@ -272,6 +339,7 @@ typedef struct {
     int                         nb_segments;
     int                         nb_keys;
     int                         nb_maps;
+    int                         nb_dateranges;
     int                         nb_custom_tags;
     int                         playlist_type;
     int                         discontinuity_sequence;
@@ -291,6 +359,7 @@ typedef struct {
     segment_list_t              segments;
     key_list_t                  keys;
     map_list_t                  maps;
+    daterange_list_t            dateranges;
     string_list_t               custom_tags;
     segment_t                   *last_segment;                  
 } media_playlist_t;

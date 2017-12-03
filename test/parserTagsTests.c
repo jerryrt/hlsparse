@@ -63,11 +63,36 @@ void map_init_test(void)
     parse_map_init(NULL);
 }
 
+void daterange_init_test(void)
+{
+    daterange_t daterange;
+    parse_daterange_init(&daterange);
+    CU_ASSERT_EQUAL(daterange.id, NULL);
+    CU_ASSERT_EQUAL(daterange.klass, NULL);
+    CU_ASSERT_EQUAL(daterange.start_date, 0);
+    CU_ASSERT_EQUAL(daterange.end_date, 0);
+    CU_ASSERT_EQUAL(daterange.duration, 0);
+    CU_ASSERT_EQUAL(daterange.planned_duration, 0);
+    CU_ASSERT_EQUAL(daterange.client_attributes.key, NULL);
+    CU_ASSERT_EQUAL(daterange.client_attributes.value_type, PARAM_TYPE_NONE);
+    CU_ASSERT_EQUAL(daterange.client_attributes.next, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_cmd, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_out, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_in, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_cmd_size, 0);
+    CU_ASSERT_EQUAL(daterange.scte35_out_size, 0);
+    CU_ASSERT_EQUAL(daterange.scte35_in_size, 0);
+    CU_ASSERT_EQUAL(daterange.end_on_next, HLS_FALSE);
+
+    parse_map_init(NULL);
+}
+
 void media_init_test(void)
 {
     media_t media;
     parse_media_init(&media);
     CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
     CU_ASSERT_EQUAL(media.instream_id, MEDIA_INSTREAMID_NONE);
     CU_ASSERT_EQUAL(media.service_n, 0);
     CU_ASSERT_EQUAL(media.uri, NULL);
@@ -83,6 +108,25 @@ void media_init_test(void)
     parse_media_init(NULL);
 }
 
+void stream_inf_init_test(void)
+{
+    stream_inf_t stream_inf;
+    parse_stream_inf_init(&stream_inf);
+    CU_ASSERT_EQUAL(stream_inf.bandwidth, 0.f);
+    CU_ASSERT_EQUAL(stream_inf.avg_bandwidth, 0.f);
+    CU_ASSERT_EQUAL(stream_inf.codecs, NULL);
+    CU_ASSERT_EQUAL(stream_inf.resolution.width, 0);
+    CU_ASSERT_EQUAL(stream_inf.resolution.height, 0);
+    CU_ASSERT_EQUAL(stream_inf.audio, NULL);
+    CU_ASSERT_EQUAL(stream_inf.subtitles, NULL);
+    CU_ASSERT_EQUAL(stream_inf.closed_captions, NULL);
+    CU_ASSERT_EQUAL(stream_inf.video, NULL);
+    CU_ASSERT_EQUAL(stream_inf.uri, NULL);
+    CU_ASSERT_EQUAL(stream_inf.frame_rate, 0);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_NONE);
+
+    parse_stream_inf_init(NULL);
+}
 void iframe_stream_inf_init_test(void)
 {
     iframe_stream_inf_t stream_inf;
@@ -94,6 +138,7 @@ void iframe_stream_inf_init_test(void)
     CU_ASSERT_EQUAL(stream_inf.resolution.height, 0);
     CU_ASSERT_EQUAL(stream_inf.video, NULL);
     CU_ASSERT_EQUAL(stream_inf.uri, NULL);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_NONE);
 
     parse_iframe_stream_inf_init(NULL);
 }
@@ -155,6 +200,30 @@ void ext_inf_term_test(void)
     CU_ASSERT_EQUAL(NULL, ext_inf.title);
 }
 
+void stream_inf_term_test(void)
+{
+    stream_inf_t stream_inf;
+    parse_stream_inf_init(&stream_inf);
+    parse_stream_inf_term(&stream_inf);
+
+    parse_stream_inf_term(NULL);
+
+    parse_stream_inf_init(&stream_inf);
+    stream_inf.codecs = str_utils_dup("codecs");
+    stream_inf.video = str_utils_dup("video");
+    stream_inf.audio = str_utils_dup("audio");
+    stream_inf.uri = str_utils_dup("uri");
+    stream_inf.subtitles = str_utils_dup("subtitles");
+    stream_inf.closed_captions = str_utils_dup("closed captions");
+    parse_stream_inf_term(&stream_inf);
+    CU_ASSERT_EQUAL(stream_inf.codecs, NULL);
+    CU_ASSERT_EQUAL(stream_inf.video, NULL);
+    CU_ASSERT_EQUAL(stream_inf.audio, NULL);
+    CU_ASSERT_EQUAL(stream_inf.uri, NULL);
+    CU_ASSERT_EQUAL(stream_inf.closed_captions, NULL);
+    CU_ASSERT_EQUAL(stream_inf.subtitles, NULL);
+}
+
 void iframe_stream_inf_term_test(void)
 {
     iframe_stream_inf_t stream_inf;
@@ -212,6 +281,48 @@ void map_term_test(void)
     CU_ASSERT_EQUAL(map.uri, NULL);
 }
 
+void daterange_term_test(void)
+{
+    daterange_t daterange;
+    parse_daterange_init(&daterange);
+
+    // make sure we don't crash
+    parse_daterange_term(NULL);
+    parse_daterange_term(&daterange);
+
+    parse_daterange_init(&daterange);
+    daterange.id = str_utils_dup("id");
+    daterange.klass = str_utils_dup("klass");
+    daterange.client_attributes.key = str_utils_dup("key");
+    daterange.client_attributes.value.number = 4.f;
+    daterange.client_attributes.value_type = PARAM_TYPE_FLOAT;
+    daterange.client_attributes.next = (param_list_t*) hls_malloc(sizeof(param_list_t));
+    parse_param_list_init(daterange.client_attributes.next);
+    daterange.client_attributes.next->key = str_utils_dup("key");
+    daterange.client_attributes.next->value_type = PARAM_TYPE_STRING;
+    daterange.client_attributes.next->value.data = str_utils_dup("value");
+    daterange.scte35_cmd = str_utils_dup("scte35_cmd");
+    daterange.scte35_cmd_size = strlen(daterange.scte35_cmd) + 1;
+    daterange.scte35_out = str_utils_dup("scte35_out");
+    daterange.scte35_out_size = strlen(daterange.scte35_out) + 1;
+    daterange.scte35_in = str_utils_dup("scte35_in");
+    daterange.scte35_in_size = strlen(daterange.scte35_in) + 1;
+
+    parse_daterange_term(&daterange);
+    CU_ASSERT_EQUAL(daterange.id, NULL);
+    CU_ASSERT_EQUAL(daterange.klass, NULL);
+    CU_ASSERT_EQUAL(daterange.client_attributes.key, NULL);
+    CU_ASSERT_EQUAL(daterange.client_attributes.value_type, PARAM_TYPE_NONE);
+    CU_ASSERT_EQUAL(daterange.client_attributes.value.data, NULL);
+    CU_ASSERT_EQUAL(daterange.client_attributes.next, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_cmd, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_cmd_size, 0);
+    CU_ASSERT_EQUAL(daterange.scte35_out, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_out_size, 0);
+    CU_ASSERT_EQUAL(daterange.scte35_in, NULL);
+    CU_ASSERT_EQUAL(daterange.scte35_in_size, 0);
+}
+
 void media_term_test(void)
 {
     media_t media;
@@ -228,6 +339,7 @@ void media_term_test(void)
     media.assoc_language = str_utils_dup("assoc_language");
     media.uri = str_utils_dup("uri");
     media.characteristics = str_utils_dup("characteristics");
+    media.channels = str_utils_dup("6");
 
     parse_media_term(&media);
     CU_ASSERT_EQUAL(media.group_id, NULL);
@@ -236,6 +348,7 @@ void media_term_test(void)
     CU_ASSERT_EQUAL(media.assoc_language, NULL);
     CU_ASSERT_EQUAL(media.uri, NULL);
     CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
 }
 
 void segment_term_test(void)
@@ -305,6 +418,58 @@ void parse_byte_range_test(void)
     CU_ASSERT_EQUAL(byte_range.o, 64);
 }
 
+void parse_stream_inf_test(void)
+{
+    stream_inf_t stream_inf;
+    parse_stream_inf_init(&stream_inf);
+
+    int res = parse_stream_inf("", 0, &stream_inf);
+    CU_ASSERT_EQUAL(res, 0);
+
+    res = parse_stream_inf(NULL, 0, &stream_inf);
+    CU_ASSERT_EQUAL(res, 0);
+
+    const char *src = "invalid stream inf";
+    res = parse_stream_inf(src, strlen(src), &stream_inf);
+    CU_ASSERT_EQUAL(res, strlen(src));
+
+    const char *src2 = "#EXT-X-STREAM-INF:BANDWIDTH=86000,AVERAGE-BANDWIDTH=90000,FRAME-RATE=29.97,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=320x240,VIDEO=\"video_value\",AUDIO=\"audio_value\",SUBTITLES=\"subtitles\",CLOSED-CAPTIONS=NONE,HDCP-LEVEL=TYPE-0";
+
+    res = parse_stream_inf(src2, strlen(src2), &stream_inf);
+    CU_ASSERT_EQUAL(res, strlen(src2));
+    CU_ASSERT_EQUAL(stream_inf.bandwidth, 86000);
+    CU_ASSERT_EQUAL(stream_inf.avg_bandwidth, 90000);
+    CU_ASSERT_EQUAL(stream_inf.frame_rate, 29.97f);
+    CU_ASSERT_EQUAL(strcmp("mp4a.40.2,avc1.4d401e", stream_inf.codecs), 0);
+    CU_ASSERT_EQUAL(stream_inf.resolution.width, 320);
+    CU_ASSERT_EQUAL(stream_inf.resolution.height, 240);
+    CU_ASSERT_EQUAL(strcmp("audio_value", stream_inf.audio), 0);
+    CU_ASSERT_EQUAL(strcmp("video_value", stream_inf.video), 0);
+    CU_ASSERT_EQUAL(strcmp("NONE", stream_inf.closed_captions), 0);
+    CU_ASSERT_EQUAL(strcmp("subtitles", stream_inf.subtitles), 0);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_TYPE0);
+
+    parse_stream_inf_term(&stream_inf);
+
+    const char *src3 = "#EXT-X-STREAM-INF:BANDWIDTH=43000,AVERAGE-BANDWIDTH=45000,FRAME-RATE=60,CODECS=\"mp4a.40.2,avc1.4d401e\",CLOSED-CAPTIONS=\"captions\",HDCP-LEVEL=NONE";
+    parse_stream_inf_init(&stream_inf);
+    res = parse_stream_inf(src3, strlen(src3), &stream_inf);
+    CU_ASSERT_EQUAL(res, strlen(src3));
+    CU_ASSERT_EQUAL(stream_inf.bandwidth, 43000);
+    CU_ASSERT_EQUAL(stream_inf.avg_bandwidth, 45000);
+    CU_ASSERT_EQUAL(stream_inf.frame_rate, 60.f);
+    CU_ASSERT_EQUAL(strcmp("mp4a.40.2,avc1.4d401e", stream_inf.codecs), 0);
+    CU_ASSERT_EQUAL(stream_inf.resolution.width, 0);
+    CU_ASSERT_EQUAL(stream_inf.resolution.height, 0);
+    CU_ASSERT_EQUAL(stream_inf.audio, NULL);
+    CU_ASSERT_EQUAL(stream_inf.video, NULL);
+    CU_ASSERT_EQUAL(strcmp("captions", stream_inf.closed_captions), 0);
+    CU_ASSERT_EQUAL(stream_inf.subtitles, NULL);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_NONE);
+
+    parse_stream_inf_term(&stream_inf);
+}
+
 void parse_iframe_stream_inf_test(void)
 {
     iframe_stream_inf_t stream_inf;
@@ -320,7 +485,7 @@ void parse_iframe_stream_inf_test(void)
     res = parse_iframe_stream_inf(src, strlen(src), &stream_inf);
     CU_ASSERT_EQUAL(res, strlen(src));
 
-    const char *src2 = "#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=86000,URI=\"low/iframe.m3u8\",AVERAGE-BANDWIDTH=90000,FRAME-RATE=29.97,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=320x240,VIDEO=\"video_value\"";
+    const char *src2 = "#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=86000,URI=\"low/iframe.m3u8\",AVERAGE-BANDWIDTH=90000,FRAME-RATE=29.97,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=320x240,VIDEO=\"video_value\",HDCP-LEVEL=TYPE-0";
 
     res = parse_iframe_stream_inf(src2, strlen(src2), &stream_inf);
     CU_ASSERT_EQUAL(res, strlen(src2));
@@ -331,6 +496,7 @@ void parse_iframe_stream_inf_test(void)
     CU_ASSERT_EQUAL(stream_inf.resolution.width, 320);
     CU_ASSERT_EQUAL(stream_inf.resolution.height, 240);
     CU_ASSERT_EQUAL(strcmp("video_value", stream_inf.video), 0);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_TYPE0);
 
     parse_iframe_stream_inf_term(&stream_inf);
 }
@@ -421,6 +587,62 @@ void parse_map_test(void)
     parse_map_term(&map);
 }
 
+void parse_daterange_test(void)
+{
+    daterange_t daterange;
+    parse_daterange_init(&daterange);
+
+    int res = parse_daterange(NULL, 0, NULL);
+    CU_ASSERT_EQUAL(res, 0);
+
+    res = parse_daterange(NULL, 0, &daterange);
+    CU_ASSERT_EQUAL(res, 0);
+
+    const char *src = "ID=\"one\",CLASS=\"myClass:K,myValue=2\",START-DATE=2017-01-01T12:00:10.000+08:00,END-DATE=2017-01-01T12:00:20.000+08:00,DURATION=10.00,PLANNED-DURATION=10.50,X-COM-TEST-ONE=\"com.test.one\",X-COM-TEST-TWO=0xAABBCCDD,X-COM-TEST-THREE=1.234,SCTE35-CMD=0x01020304,SCTE35-OUT=0x05060708,SCTE35-IN=0x090A0B0C,END-ON-NEXT=YES";
+    int len = strlen(src);
+    res = parse_daterange(src, len, NULL);
+    CU_ASSERT_EQUAL(res, len);
+
+    res = parse_daterange(src, strlen(src), &daterange);
+    CU_ASSERT_EQUAL(strcmp(daterange.id, "one"), 0);
+    CU_ASSERT_EQUAL(res, len);
+    CU_ASSERT_EQUAL(strcmp(daterange.klass, "myClass:K,myValue=2"), 0);
+    CU_ASSERT_EQUAL(daterange.start_date, 1483243210000);
+    CU_ASSERT_EQUAL(daterange.end_date, 1483243220000);
+    CU_ASSERT_EQUAL(daterange.duration, 10.f);
+    CU_ASSERT_EQUAL(daterange.planned_duration, 10.5f);
+    const char cmd[] = { 0x01, 0x02, 0x03, 0x04 };
+    CU_ASSERT_EQUAL(memcmp(daterange.scte35_cmd, cmd, 4), 0);
+    CU_ASSERT_EQUAL(daterange.scte35_cmd_size, 4);
+    const char out[] = { 0x05, 0x06, 0x07, 0x08 };
+    CU_ASSERT_EQUAL(memcmp(daterange.scte35_out, out, 4), 0);
+    CU_ASSERT_EQUAL(daterange.scte35_out_size, 4);
+    const char in[] = { 0x09, 0x0A, 0x0B, 0x0C };
+    CU_ASSERT_EQUAL(memcmp(daterange.scte35_in, in, 4), 0);
+    CU_ASSERT_EQUAL(daterange.scte35_in_size, 4);
+    CU_ASSERT_EQUAL(daterange.end_on_next, HLS_TRUE);
+
+    param_list_t *item = &daterange.client_attributes;
+    CU_ASSERT_EQUAL(item->value_type, PARAM_TYPE_STRING);
+    CU_ASSERT_EQUAL(strcmp(item->key, "X-COM-TEST-ONE"), 0);
+    CU_ASSERT_EQUAL(strcmp(item->value.data, "com.test.one"), 0);
+    CU_ASSERT_EQUAL(item->value_size, 13);
+    item = item->next;
+    CU_ASSERT_EQUAL(item->value_type, PARAM_TYPE_DATA);
+    CU_ASSERT_EQUAL(strcmp(item->key, "X-COM-TEST-TWO"), 0);
+    char xcomtwo[] = { 0xAA, 0xBB, 0xCC, 0xDD };
+    CU_ASSERT_EQUAL(memcmp(item->value.data, xcomtwo, 4), 0);
+    CU_ASSERT_EQUAL(item->value_size, 4);
+    item = item->next;
+    CU_ASSERT_EQUAL(item->value_type, PARAM_TYPE_FLOAT);
+    CU_ASSERT_EQUAL(strcmp(item->key, "X-COM-TEST-THREE"), 0);
+    CU_ASSERT_EQUAL(item->value.number, 1.234f);
+    CU_ASSERT_EQUAL(item->value_size, 0);
+    CU_ASSERT_EQUAL(item->next, NULL);
+
+    parse_daterange_term(&daterange);
+}
+
 void parse_media_test(void)
 {
     int res = parse_media(NULL, 0, NULL);
@@ -437,25 +659,27 @@ void parse_media_test(void)
     res = parse_media("", 0, &media);
     CU_ASSERT_EQUAL(res, 0);
 
-    const char *src = "TYPE=AUDIO,URI=\"uri\",GROUP-ID=\"group_id\",LANGUAGE=\"en-US\",ASSOC-LANGUAGE=\"en-GB\",NAME=\"name\",DEFAULT=NO,AUTOSELECT=YES,FORCED=NO,INSTREAM-ID=\"CC1\",CHARACTERISTICS=\"one.one,two.two,three.three\"";
+    const char *src = "TYPE=AUDIO,URI=\"uri\",GROUP-ID=\"group_id\",LANGUAGE=\"en-US\",ASSOC-LANGUAGE=\"en-GB\",NAME=\"name\",DEFAULT=NO,AUTOSELECT=YES,FORCED=NO,INSTREAM-ID=\"CC1\",CHARACTERISTICS=\"one.one,two.two,three.three\",CHANNELS=\"6\"";
+    int len  = strlen(src);
 
-    res = parse_media(src, strlen(src), NULL);
-    CU_ASSERT_EQUAL(res, strlen(src));
+    res = parse_media(src, len, NULL);
+    CU_ASSERT_EQUAL(res, len);
 
-    res = parse_media(src, strlen(src), &media);
-    CU_ASSERT_EQUAL(res, strlen(src));
+    res = parse_media(src, len, &media);
+    CU_ASSERT_EQUAL(res, len);
     CU_ASSERT_EQUAL(media.type, MEDIA_TYPE_AUDIO);
     CU_ASSERT_EQUAL(media.is_default, HLS_FALSE);
     CU_ASSERT_EQUAL(media.auto_select, HLS_TRUE);
     CU_ASSERT_EQUAL(media.forced, HLS_FALSE);
     CU_ASSERT_EQUAL(media.instream_id, MEDIA_INSTREAMID_CC1);
     CU_ASSERT_EQUAL(media.service_n, 0);
-    CU_ASSERT_EQUAL(strcmp(media.uri, "uri"), 0);
+    CU_ASSERT_EQUAL(strcmp(media.uri, "uri"), 0)
     CU_ASSERT_EQUAL(strcmp(media.group_id, "group_id"), 0);
     CU_ASSERT_EQUAL(strcmp(media.language, "en-US"), 0);
     CU_ASSERT_EQUAL(strcmp(media.assoc_language, "en-GB"), 0);
     CU_ASSERT_EQUAL(strcmp(media.name, "name"), 0);
     CU_ASSERT_EQUAL(strcmp(media.characteristics, "one.one,two.two,three.three"), 0);
+    CU_ASSERT_EQUAL(strcmp(media.channels, "6"), 0);
     parse_media_term(&media);
 
     const char *src2 = "TYPE=VIDEO,DEFAULT=YES,AUTOSELECT=NO,FORCED=YES,INSTREAM-ID=\"CC2\"";
@@ -468,6 +692,9 @@ void parse_media_test(void)
     CU_ASSERT_EQUAL(media.forced, HLS_TRUE);
     CU_ASSERT_EQUAL(media.instream_id, MEDIA_INSTREAMID_CC2);
     CU_ASSERT_EQUAL(media.service_n, 0);
+    CU_ASSERT_EQUAL(media.name, NULL);
+    CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
     parse_media_term(&media);
 
     const char *src3= "TYPE=SUBTITLES,DEFAULT=WHYNOT,AUTOSELECT=SURE,FORCED=YEP,INSTREAM-ID=\"CC3\"";
@@ -480,6 +707,9 @@ void parse_media_test(void)
     CU_ASSERT_EQUAL(media.forced, HLS_FALSE);
     CU_ASSERT_EQUAL(media.instream_id, MEDIA_INSTREAMID_CC3);
     CU_ASSERT_EQUAL(media.service_n, 0);
+    CU_ASSERT_EQUAL(media.name, NULL);
+    CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
     parse_media_term(&media);
 
     const char *src4= "TYPE=CLOSED-CAPTIONS,INSTREAM-ID=\"CC4\",NAME=\"\"";
@@ -492,6 +722,7 @@ void parse_media_test(void)
     CU_ASSERT_EQUAL(media.name, NULL);
     CU_ASSERT_EQUAL(media.group_id, NULL);
     CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
     CU_ASSERT_EQUAL(media.language, NULL);
     CU_ASSERT_EQUAL(media.assoc_language, NULL);
     CU_ASSERT_EQUAL(media.is_default, HLS_FALSE);
@@ -506,6 +737,12 @@ void parse_media_test(void)
     CU_ASSERT_EQUAL(media.type, MEDIA_TYPE_INVALID);
     CU_ASSERT_EQUAL(media.instream_id, MEDIA_INSTREAMID_SERVICE);
     CU_ASSERT_EQUAL(media.service_n, 5);
+    CU_ASSERT_EQUAL(media.name, NULL);
+    CU_ASSERT_EQUAL(media.group_id, NULL);
+    CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
+    CU_ASSERT_EQUAL(media.language, NULL);
+    CU_ASSERT_EQUAL(media.assoc_language, NULL);
     parse_media_term(&media);
 }
 
@@ -613,14 +850,16 @@ void parse_start_test(void)
 void setup(void)
 {
     hlsparse_global_init();
-    
+
     suite("parser_tags_init", NULL, NULL);
     test("byte_range_init", byte_range_init_test);
     test("ext_inf_init", ext_inf_init_test);
+    test("stream_inf_init", stream_inf_init_test);
     test("iframe_stream_inf_init", iframe_stream_inf_init_test);
     test("resolution_init", resolution_init_test);
     test("key_init", key_init_test);
     test("map_init", map_init_test);
+    test("daterange_init", daterange_init_test);
     test("media_init", media_init_test);
     test("segment_init", segment_init_test);
     test("session_data_init", session_data_init_test);
@@ -628,19 +867,23 @@ void setup(void)
 
     suite("parser_tags_term", NULL, NULL);
     test("ext_inf_term", ext_inf_term_test);
-    test("iframe_iframe_stream_inf_term", iframe_stream_inf_term_test);
+    test("stream_inf_term", stream_inf_term_test);
+    test("iframe_stream_inf_term", iframe_stream_inf_term_test);
     test("key_term", key_term_test);
     test("map_term", map_term_test);
+    test("daterange_term", daterange_term_test);
     test("media_term", media_term_test);
     test("segment_term", segment_term_test);
     test("session_data_term", session_data_term_test);
 
     suite("parser_tags_parse", NULL, NULL);
     test("parse_byte_range", parse_byte_range_test);
+    test("parse_stream_inf", parse_stream_inf_test);
     test("parse_iframe_stream_inf", parse_iframe_stream_inf_test);
     test("parse_resolution", parse_resolution_test);
     test("parse_key", parse_key_test);
     test("parse_map", parse_map_test);
+    test("parse_daterange", parse_daterange_test);
     test("parse_media", parse_media_test);
     test("parse_segment", parse_segment_test);
     test("parse_session_data", parse_session_data_test);

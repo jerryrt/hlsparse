@@ -140,6 +140,33 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
 
         ++pt;
         pt += parse_start(pt, size - (pt - src), &dest->start);
+    } else if(EQUAL(pt, EXTXSESSIONKEY)) {
+
+        ++pt;
+        hls_key_t* key = hls_malloc(sizeof(hls_key_t));
+        parse_key_init(key);
+        pt += parse_key(pt, size - (pt - src), key);
+
+        if(key->method != KEY_METHOD_NONE && key->method != KEY_METHOD_INVALID) {
+            path_combine(&key->uri, dest->uri, key->uri);
+        }
+
+        key_list_t *next = &dest->session_keys;
+
+        while(next) {
+            if(!next->data) {
+                next->data = key;
+                break;
+            } else if(!next->next) {
+                next->next = hls_malloc(sizeof(hls_key_t));
+                parse_key_list_init(next->next);
+                next->next->data = key;
+                break;
+            }
+            next = next->next;
+        };
+        
+        ++(dest->nb_session_keys);        
     } else {
 
         // custom src
@@ -254,6 +281,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
 
         segment->key_index = dest->nb_keys - 1;
         segment->map_index = dest->nb_maps - 1;
+        segment->daterange_index = dest->nb_dateranges - 1;
 
         segment->sequence_num = dest->next_segment_media_sequence;
         ++(dest->next_segment_media_sequence);
@@ -355,6 +383,31 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
         };
 
         ++(dest->nb_maps);
+
+    } else if(EQUAL(pt, EXTXDATERANGE)) {
+        ++pt;
+        daterange_t *daterange = hls_malloc(sizeof(daterange_t));;
+        parse_daterange_init(daterange);
+        pt += parse_daterange(pt, size - (pt - src), daterange);
+        daterange->pdt = dest->next_segment_pdt;
+
+        daterange_list_t *next = &dest->dateranges;
+
+        while(next) {
+
+            if(!next->data) {
+                next->data = daterange;
+                break;
+            } else if(!next->next) {
+                next->next = hls_malloc(sizeof(daterange_t));
+                parse_daterange_list_init(next->next);
+                next->next->data = daterange;
+                break;
+            }
+            next = next->next;
+        };
+
+        ++(dest->nb_dateranges);
 
     } else {
         // custom src
