@@ -416,7 +416,7 @@ void parse_daterange_term(daterange_t *dest)
         dest->scte35_cmd_size = 0;
         dest->scte35_out_size = 0;
         dest->scte35_in_size = 0;
-        
+
         parse_param_term(params, 5);
         parse_param_list_term(&dest->client_attributes);
     }
@@ -439,10 +439,11 @@ void parse_media_term(media_t *dest)
             &dest->language,
             &dest->assoc_language,
             &dest->uri,
-            &dest->characteristics
+            &dest->characteristics,
+            &dest->channels,
         };
 
-        parse_param_term(params, 6);
+        parse_param_term(params, 7);
     }
 }
 
@@ -1276,6 +1277,9 @@ int parse_media_tag(const char *src, size_t size, media_t *dest)
     } else if(EQUAL(pt, CHARACTERISTICS)) {
         ++pt; // get past the '=' sign
         pt += parse_attrib_str(pt, &dest->characteristics, size - (pt - src));
+    } else if(EQUAL(pt, CHANNELS)) {
+        ++pt; // get past the '=' sign
+        pt += parse_attrib_str(pt, &dest->channels, size - (pt - src));
     } else {
         // custom tags?
     }

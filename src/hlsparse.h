@@ -88,6 +88,7 @@
 #define CC4                         "CC4"
 #define SERVICE                     "SERVICE"
 #define CHARACTERISTICS             "CHARACTERISTICS"
+#define CHANNELS                    "CHANNELS"
 #define DATAID                      "DATA-ID"
 #define VALUE                       "VALUE"
 #define TIMEOFFSET                  "TIME-OFFSET"
@@ -237,6 +238,7 @@ typedef struct {
     char *assoc_language;
     char *uri;
     char *characteristics;
+    char *channels;
 } media_t;
 
 typedef struct {

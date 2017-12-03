@@ -92,6 +92,7 @@ void media_init_test(void)
     media_t media;
     parse_media_init(&media);
     CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
     CU_ASSERT_EQUAL(media.instream_id, MEDIA_INSTREAMID_NONE);
     CU_ASSERT_EQUAL(media.service_n, 0);
     CU_ASSERT_EQUAL(media.uri, NULL);
@@ -294,6 +295,7 @@ void media_term_test(void)
     media.assoc_language = str_utils_dup("assoc_language");
     media.uri = str_utils_dup("uri");
     media.characteristics = str_utils_dup("characteristics");
+    media.channels = str_utils_dup("6");
 
     parse_media_term(&media);
     CU_ASSERT_EQUAL(media.group_id, NULL);
@@ -302,6 +304,7 @@ void media_term_test(void)
     CU_ASSERT_EQUAL(media.assoc_language, NULL);
     CU_ASSERT_EQUAL(media.uri, NULL);
     CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
 }
 
 void segment_term_test(void)
@@ -559,7 +562,7 @@ void parse_media_test(void)
     res = parse_media("", 0, &media);
     CU_ASSERT_EQUAL(res, 0);
 
-    const char *src = "TYPE=AUDIO,URI=\"uri\",GROUP-ID=\"group_id\",LANGUAGE=\"en-US\",ASSOC-LANGUAGE=\"en-GB\",NAME=\"name\",DEFAULT=NO,AUTOSELECT=YES,FORCED=NO,INSTREAM-ID=\"CC1\",CHARACTERISTICS=\"one.one,two.two,three.three\"";
+    const char *src = "TYPE=AUDIO,URI=\"uri\",GROUP-ID=\"group_id\",LANGUAGE=\"en-US\",ASSOC-LANGUAGE=\"en-GB\",NAME=\"name\",DEFAULT=NO,AUTOSELECT=YES,FORCED=NO,INSTREAM-ID=\"CC1\",CHARACTERISTICS=\"one.one,two.two,three.three\",CHANNELS=\"6\"";
     int len  = strlen(src);
 
     res = parse_media(src, len, NULL);
@@ -579,6 +582,7 @@ void parse_media_test(void)
     CU_ASSERT_EQUAL(strcmp(media.assoc_language, "en-GB"), 0);
     CU_ASSERT_EQUAL(strcmp(media.name, "name"), 0);
     CU_ASSERT_EQUAL(strcmp(media.characteristics, "one.one,two.two,three.three"), 0);
+    CU_ASSERT_EQUAL(strcmp(media.channels, "6"), 0);
     parse_media_term(&media);
 
     const char *src2 = "TYPE=VIDEO,DEFAULT=YES,AUTOSELECT=NO,FORCED=YES,INSTREAM-ID=\"CC2\"";
@@ -591,6 +595,9 @@ void parse_media_test(void)
     CU_ASSERT_EQUAL(media.forced, HLS_TRUE);
     CU_ASSERT_EQUAL(media.instream_id, MEDIA_INSTREAMID_CC2);
     CU_ASSERT_EQUAL(media.service_n, 0);
+    CU_ASSERT_EQUAL(media.name, NULL);
+    CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
     parse_media_term(&media);
 
     const char *src3= "TYPE=SUBTITLES,DEFAULT=WHYNOT,AUTOSELECT=SURE,FORCED=YEP,INSTREAM-ID=\"CC3\"";
@@ -603,6 +610,9 @@ void parse_media_test(void)
     CU_ASSERT_EQUAL(media.forced, HLS_FALSE);
     CU_ASSERT_EQUAL(media.instream_id, MEDIA_INSTREAMID_CC3);
     CU_ASSERT_EQUAL(media.service_n, 0);
+    CU_ASSERT_EQUAL(media.name, NULL);
+    CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
     parse_media_term(&media);
 
     const char *src4= "TYPE=CLOSED-CAPTIONS,INSTREAM-ID=\"CC4\",NAME=\"\"";
@@ -615,6 +625,7 @@ void parse_media_test(void)
     CU_ASSERT_EQUAL(media.name, NULL);
     CU_ASSERT_EQUAL(media.group_id, NULL);
     CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
     CU_ASSERT_EQUAL(media.language, NULL);
     CU_ASSERT_EQUAL(media.assoc_language, NULL);
     CU_ASSERT_EQUAL(media.is_default, HLS_FALSE);
@@ -629,6 +640,12 @@ void parse_media_test(void)
     CU_ASSERT_EQUAL(media.type, MEDIA_TYPE_INVALID);
     CU_ASSERT_EQUAL(media.instream_id, MEDIA_INSTREAMID_SERVICE);
     CU_ASSERT_EQUAL(media.service_n, 5);
+    CU_ASSERT_EQUAL(media.name, NULL);
+    CU_ASSERT_EQUAL(media.group_id, NULL);
+    CU_ASSERT_EQUAL(media.characteristics, NULL);
+    CU_ASSERT_EQUAL(media.channels, NULL);
+    CU_ASSERT_EQUAL(media.language, NULL);
+    CU_ASSERT_EQUAL(media.assoc_language, NULL);
     parse_media_term(&media);
 }
 
