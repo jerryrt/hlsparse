@@ -74,7 +74,7 @@ void daterange_init_test(void)
     CU_ASSERT_EQUAL(daterange.duration, 0);
     CU_ASSERT_EQUAL(daterange.planned_duration, 0);
     CU_ASSERT_EQUAL(daterange.client_attributes.key, NULL);
-    CU_ASSERT_EQUAL(daterange.client_attributes.value, NULL);
+    CU_ASSERT_EQUAL(daterange.client_attributes.value_type, PARAM_TYPE_NONE);
     CU_ASSERT_EQUAL(daterange.client_attributes.next, NULL);
     CU_ASSERT_EQUAL(daterange.scte35_cmd, NULL);
     CU_ASSERT_EQUAL(daterange.scte35_out, NULL);
@@ -246,11 +246,13 @@ void daterange_term_test(void)
     daterange.id = str_utils_dup("id");
     daterange.klass = str_utils_dup("klass");
     daterange.client_attributes.key = str_utils_dup("key");
-    daterange.client_attributes.value = str_utils_dup("value");
+    daterange.client_attributes.value.number = 4.f;
+    daterange.client_attributes.value_type = PARAM_TYPE_FLOAT;
     daterange.client_attributes.next = (param_list_t*) hls_malloc(sizeof(param_list_t));
     parse_param_list_init(daterange.client_attributes.next);
     daterange.client_attributes.next->key = str_utils_dup("key");
-    daterange.client_attributes.next->value = str_utils_dup("value");
+    daterange.client_attributes.next->value_type = PARAM_TYPE_STRING;
+    daterange.client_attributes.next->value.data = str_utils_dup("value");
     daterange.scte35_cmd = str_utils_dup("scte35_cmd");
     daterange.scte35_out = str_utils_dup("scte35_out");
     daterange.scte35_in = str_utils_dup("scte35_in");
@@ -259,7 +261,8 @@ void daterange_term_test(void)
     CU_ASSERT_EQUAL(daterange.id, NULL);
     CU_ASSERT_EQUAL(daterange.klass, NULL);
     CU_ASSERT_EQUAL(daterange.client_attributes.key, NULL);
-    CU_ASSERT_EQUAL(daterange.client_attributes.value, NULL);
+    CU_ASSERT_EQUAL(daterange.client_attributes.value_type, PARAM_TYPE_NONE);
+    CU_ASSERT_EQUAL(daterange.client_attributes.value.data, NULL);
     CU_ASSERT_EQUAL(daterange.client_attributes.next, NULL);
     CU_ASSERT_EQUAL(daterange.scte35_cmd, NULL);
     CU_ASSERT_EQUAL(daterange.scte35_out, NULL);
@@ -475,6 +478,56 @@ void parse_map_test(void)
     parse_map_term(&map);
 }
 
+void parse_daterange_test(void)
+{
+    daterange_t daterange;
+    parse_daterange_init(&daterange);
+
+    int res = parse_daterange(NULL, 0, NULL);
+    CU_ASSERT_EQUAL(res, 0);
+
+    res = parse_daterange(NULL, 0, &daterange);
+    CU_ASSERT_EQUAL(res, 0);
+
+    const char *src = "ID=\"one\",CLASS=\"myClass:K,myValue=2\",START-DATE=2017-01-01T12:00:10.000+08:00,END-DATE=2017-01-01T12:00:20.000+08:00,DURATION=10.00,PLANNED-DURATION=10.50,X-COM-TEST-ONE=\"com.test.one\",X-COM-TEST-TWO=0xAABBCCDD,X-COM-TEST-THREE=1.234,SCTE35-CMD=0x01020304,SCTE35-OUT=0x05060708,SCTE35-IN=0x090A0B0C,END-ON-NEXT=YES";
+    int len = strlen(src);
+    res = parse_daterange(src, len, NULL);
+    CU_ASSERT_EQUAL(res, len);
+
+    res = parse_daterange(src, strlen(src), &daterange);
+    CU_ASSERT_EQUAL(strcmp(daterange.id, "one"), 0);
+    CU_ASSERT_EQUAL(res, len);
+    CU_ASSERT_EQUAL(strcmp(daterange.klass, "myClass:K,myValue=2"), 0);
+    CU_ASSERT_EQUAL(daterange.start_date, 1483243210000);
+    CU_ASSERT_EQUAL(daterange.end_date, 1483243220000);
+    CU_ASSERT_EQUAL(daterange.duration, 10.f);
+    CU_ASSERT_EQUAL(daterange.planned_duration, 10.5f);
+    const char cmd[] = { 0x01, 0x02, 0x03, 0x04 };
+    CU_ASSERT_EQUAL(memcmp(daterange.scte35_cmd, cmd, 4), 0);
+    const char out[] = { 0x05, 0x06, 0x07, 0x08 };
+    CU_ASSERT_EQUAL(memcmp(daterange.scte35_out, out, 4), 0);
+    const char in[] = { 0x09, 0x0A, 0x0B, 0x0C };
+    CU_ASSERT_EQUAL(memcmp(daterange.scte35_in, in, 4), 0);
+    CU_ASSERT_EQUAL(daterange.end_on_next, HLS_TRUE);
+
+    param_list_t *item = &daterange.client_attributes;
+    CU_ASSERT_EQUAL(item->value_type, PARAM_TYPE_STRING);
+    CU_ASSERT_EQUAL(strcmp(item->key, "X-COM-TEST-ONE"), 0);
+    CU_ASSERT_EQUAL(strcmp(item->value.data, "com.test.one"), 0);
+    item = item->next;
+    CU_ASSERT_EQUAL(item->value_type, PARAM_TYPE_DATA);
+    CU_ASSERT_EQUAL(strcmp(item->key, "X-COM-TEST-TWO"), 0);
+    char xcomtwo[] = { 0xAA, 0xBB, 0xCC, 0xDD };
+    CU_ASSERT_EQUAL(memcmp(item->value.data, xcomtwo, 4), 0);
+    item = item->next;
+    CU_ASSERT_EQUAL(item->value_type, PARAM_TYPE_FLOAT);
+    CU_ASSERT_EQUAL(strcmp(item->key, "X-COM-TEST-THREE"), 0);
+    CU_ASSERT_EQUAL(item->value.number, 1.234f);
+    CU_ASSERT_EQUAL(item->next, NULL);
+
+    parse_daterange_term(&daterange);
+}
+
 void parse_media_test(void)
 {
     int res = parse_media(NULL, 0, NULL);
@@ -492,19 +545,20 @@ void parse_media_test(void)
     CU_ASSERT_EQUAL(res, 0);
 
     const char *src = "TYPE=AUDIO,URI=\"uri\",GROUP-ID=\"group_id\",LANGUAGE=\"en-US\",ASSOC-LANGUAGE=\"en-GB\",NAME=\"name\",DEFAULT=NO,AUTOSELECT=YES,FORCED=NO,INSTREAM-ID=\"CC1\",CHARACTERISTICS=\"one.one,two.two,three.three\"";
+    int len  = strlen(src);
 
-    res = parse_media(src, strlen(src), NULL);
-    CU_ASSERT_EQUAL(res, strlen(src));
+    res = parse_media(src, len, NULL);
+    CU_ASSERT_EQUAL(res, len);
 
-    res = parse_media(src, strlen(src), &media);
-    CU_ASSERT_EQUAL(res, strlen(src));
+    res = parse_media(src, len, &media);
+    CU_ASSERT_EQUAL(res, len);
     CU_ASSERT_EQUAL(media.type, MEDIA_TYPE_AUDIO);
     CU_ASSERT_EQUAL(media.is_default, HLS_FALSE);
     CU_ASSERT_EQUAL(media.auto_select, HLS_TRUE);
     CU_ASSERT_EQUAL(media.forced, HLS_FALSE);
     CU_ASSERT_EQUAL(media.instream_id, MEDIA_INSTREAMID_CC1);
     CU_ASSERT_EQUAL(media.service_n, 0);
-    CU_ASSERT_EQUAL(strcmp(media.uri, "uri"), 0);
+    CU_ASSERT_EQUAL(strcmp(media.uri, "uri"), 0)
     CU_ASSERT_EQUAL(strcmp(media.group_id, "group_id"), 0);
     CU_ASSERT_EQUAL(strcmp(media.language, "en-US"), 0);
     CU_ASSERT_EQUAL(strcmp(media.assoc_language, "en-GB"), 0);
@@ -697,6 +751,7 @@ void setup(void)
     test("parse_resolution", parse_resolution_test);
     test("parse_key", parse_key_test);
     test("parse_map", parse_map_test);
+    test("parse_daterange", parse_daterange_test);
     test("parse_media", parse_media_test);
     test("parse_segment", parse_segment_test);
     test("parse_session_data", parse_session_data_test);

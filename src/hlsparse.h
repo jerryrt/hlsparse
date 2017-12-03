@@ -19,7 +19,7 @@
 
 // HLS tags
 #define EXTM3U                      "EXTM3U"
-#define EXTXVERSION                 "EXT-X-VERSION"
+#define EXTXVERSION                "EXT-X-VERSION"
 #define EXTINF                      "EXTINF"
 #define EXTXBYTERANGE               "EXT-X-BYTERANGE"
 #define EXTXDISCONTINUITY           "EXT-X-DISCONTINUITY"
@@ -120,6 +120,11 @@
 #define PLAYLIST_TYPE_EVENT         1
 #define PLAYLIST_TYPE_INVALID       2
 
+#define PARAM_TYPE_NONE             0
+#define PARAM_TYPE_DATA             1
+#define PARAM_TYPE_STRING           2
+#define PARAM_TYPE_FLOAT            3
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -136,10 +141,16 @@ typedef struct string_list {
     struct string_list *next;
 } string_list_t;
 
+typedef int param_type_t;
+
 typedef struct param_list {
-    char *key;
-    char *value;
-    struct param_list *next;
+    char *key;                  // name of the a parameter entry.
+    union {
+        char *data;             // string or byte data value.
+        float number;           // floating point number value.
+    } value;
+    param_type_t value_type;    // type of content stored in value.
+    struct param_list *next;    // next item in linked list
 } param_list_t;
 
 typedef struct {

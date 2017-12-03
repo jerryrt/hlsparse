@@ -727,10 +727,11 @@ void parse_param_list_term(param_list_t *dest)
             hls_free(dest->key);
             dest->key = NULL;
         }
-        if(dest->value) {
-            hls_free(dest->value);
-            dest->value = NULL;
+        if(dest->value.data && (dest->value_type == PARAM_TYPE_DATA || dest->value_type == PARAM_TYPE_STRING)) {
+            hls_free(dest->value.data);
         }
+        dest->value.data = NULL;
+        dest->value_type = PARAM_TYPE_NONE;
 
         param_list_t *ptr = dest->next;
         dest->next = NULL;
@@ -741,6 +742,7 @@ void parse_param_list_term(param_list_t *dest)
         }
     }
 }
+
 /**
  * Parse HLS playlist string data into a supplied byte_range_t object.
  * This function can parse the #EXT-X tag version of a byte range, or the
@@ -1097,10 +1099,10 @@ int parse_daterange_tag(const char *src, size_t size, daterange_t *dest)
 
     if(EQUAL(pt, ID)) {
         ++pt;
-        parse_attrib_str(pt, &dest->id, size - (pt - src));
+        pt += parse_attrib_str(pt, &dest->id, size - (pt - src));
     } else if(EQUAL(pt, CLASS)) {
         ++pt;
-        parse_attrib_str(pt, &dest->klass, size - (pt - src));
+        pt += parse_attrib_str(pt, &dest->klass, size - (pt - src));
     } else if(EQUAL(pt, STARTDATE)) {
         ++pt; // get past the '=' sign
         pt += parse_date(pt, &dest->start_date, size - (pt - src));
@@ -1138,18 +1140,37 @@ int parse_daterange_tag(const char *src, size_t size, daterange_t *dest)
         }
         // get the key string
         if(tmp - pt > 1) {
-            param_list_t *param = hls_malloc(sizeof(param_list_t));
-            parse_param_list_init(param);
-            // push the new data onto the front of the list
-            param->key = dest->client_attributes.key;
-            param->value = dest->client_attributes.value;
-            param->next = dest->client_attributes.next;
-            dest->client_attributes.next = param;
+            param_list_t *param = NULL;
+            // use the base client_attributes if there are no values stored.
+            if(dest->client_attributes.value_type == PARAM_TYPE_NONE) {
+                param = &dest->client_attributes;
+            }else{
+                // allocate a new parameter.
+                param = (param_list_t*) hls_malloc(sizeof(param_list_t));
+                parse_param_list_init(param);
+                // find the last value in the link list, we'll attach the new one
+                // to this one's "next" property.
+                param_list_t *prev = &dest->client_attributes;
+                while(prev->next) {
+                    prev = prev->next;
+                }
+                // link the param onto the list.
+                prev->next = param;
+            }
             // duplicate the string to create the new key
-            dest->client_attributes.key = str_utils_ndup(pt, tmp-pt);
+            param->key = str_utils_ndup(pt, tmp-pt);
             // find the new value string
             pt = tmp + 1; // get past the '='
-            pt += parse_attrib_str(pt, &dest->client_attributes.value, size - (pt - src));
+            if(*pt == '"') {
+                param->value_type = PARAM_TYPE_STRING;
+                pt += parse_attrib_str(pt, &param->value.data, size - (pt - src));
+            }else if(*pt == '0' && (pt[1] == 'x' || pt[1] == 'X')) {
+                param->value_type = PARAM_TYPE_DATA;
+                pt += parse_attrib_data(pt, &param->value.data, size - (pt - src));
+            }else{
+                param->value_type = PARAM_TYPE_FLOAT;
+                pt += parse_str_to_float(pt, &param->value.number, size - (pt - src));
+            }
         }
     }
 
