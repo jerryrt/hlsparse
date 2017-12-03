@@ -1585,7 +1585,11 @@ int parse_stream_inf_tag(const char *src, size_t size, stream_inf_t *dest)
         pt += parse_attrib_str(pt, &dest->subtitles, size - (pt - src));
     } else if(EQUAL(pt, CLOSEDCAPTIONS)) {
         ++pt; // get past the '=' sign
-        pt += parse_attrib_str(pt, &dest->closed_captions, size - (pt - src));
+        if(EQUAL(pt, NONE)) {
+            dest->closed_captions = str_utils_dup(NONE);
+        }else{
+            pt += parse_attrib_str(pt, &dest->closed_captions, size - (pt - src));
+        }
     } else if(EQUAL(pt, FRAMERATE)) {
         ++pt; // get past the '=' sign
         pt += parse_str_to_float(pt, &dest->frame_rate, size - (pt - src));

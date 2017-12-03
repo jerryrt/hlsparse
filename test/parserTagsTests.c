@@ -433,7 +433,7 @@ void parse_stream_inf_test(void)
     res = parse_stream_inf(src, strlen(src), &stream_inf);
     CU_ASSERT_EQUAL(res, strlen(src));
 
-    const char *src2 = "#EXT-X-STREAM-INF:BANDWIDTH=86000,AVERAGE-BANDWIDTH=90000,FRAME-RATE=29.97,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=320x240,VIDEO=\"video_value\",AUDIO=\"audio_value\",SUBTITLES=\"subtitles\",CLOSED-CAPTIONS=\"closed_captions\",HDCP-LEVEL=TYPE-0";
+    const char *src2 = "#EXT-X-STREAM-INF:BANDWIDTH=86000,AVERAGE-BANDWIDTH=90000,FRAME-RATE=29.97,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=320x240,VIDEO=\"video_value\",AUDIO=\"audio_value\",SUBTITLES=\"subtitles\",CLOSED-CAPTIONS=NONE,HDCP-LEVEL=TYPE-0";
 
     res = parse_stream_inf(src2, strlen(src2), &stream_inf);
     CU_ASSERT_EQUAL(res, strlen(src2));
@@ -445,9 +445,27 @@ void parse_stream_inf_test(void)
     CU_ASSERT_EQUAL(stream_inf.resolution.height, 240);
     CU_ASSERT_EQUAL(strcmp("audio_value", stream_inf.audio), 0);
     CU_ASSERT_EQUAL(strcmp("video_value", stream_inf.video), 0);
-    CU_ASSERT_EQUAL(strcmp("closed_captions", stream_inf.closed_captions), 0);
+    CU_ASSERT_EQUAL(strcmp("NONE", stream_inf.closed_captions), 0);
     CU_ASSERT_EQUAL(strcmp("subtitles", stream_inf.subtitles), 0);
     CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_TYPE0);
+
+    parse_stream_inf_term(&stream_inf);
+
+    const char *src3 = "#EXT-X-STREAM-INF:BANDWIDTH=43000,AVERAGE-BANDWIDTH=45000,FRAME-RATE=60,CODECS=\"mp4a.40.2,avc1.4d401e\",CLOSED-CAPTIONS=\"captions\",HDCP-LEVEL=NONE";
+    parse_stream_inf_init(&stream_inf);
+    res = parse_stream_inf(src3, strlen(src3), &stream_inf);
+    CU_ASSERT_EQUAL(res, strlen(src3));
+    CU_ASSERT_EQUAL(stream_inf.bandwidth, 43000);
+    CU_ASSERT_EQUAL(stream_inf.avg_bandwidth, 45000);
+    CU_ASSERT_EQUAL(stream_inf.frame_rate, 60.f);
+    CU_ASSERT_EQUAL(strcmp("mp4a.40.2,avc1.4d401e", stream_inf.codecs), 0);
+    CU_ASSERT_EQUAL(stream_inf.resolution.width, 0);
+    CU_ASSERT_EQUAL(stream_inf.resolution.height, 0);
+    CU_ASSERT_EQUAL(stream_inf.audio, NULL);
+    CU_ASSERT_EQUAL(stream_inf.video, NULL);
+    CU_ASSERT_EQUAL(strcmp("captions", stream_inf.closed_captions), 0);
+    CU_ASSERT_EQUAL(stream_inf.subtitles, NULL);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_NONE);
 
     parse_stream_inf_term(&stream_inf);
 }
