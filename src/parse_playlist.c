@@ -140,6 +140,33 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
 
         ++pt;
         pt += parse_start(pt, size - (pt - src), &dest->start);
+    } else if(EQUAL(pt, EXTXSESSIONKEY)) {
+
+        ++pt;
+        hls_key_t* key = hls_malloc(sizeof(hls_key_t));
+        parse_key_init(key);
+        pt += parse_key(pt, size - (pt - src), key);
+
+        if(key->method != KEY_METHOD_NONE && key->method != KEY_METHOD_INVALID) {
+            path_combine(&key->uri, dest->uri, key->uri);
+        }
+
+        key_list_t *next = &dest->session_keys;
+
+        while(next) {
+            if(!next->data) {
+                next->data = key;
+                break;
+            } else if(!next->next) {
+                next->next = hls_malloc(sizeof(hls_key_t));
+                parse_key_list_init(next->next);
+                next->next->data = key;
+                break;
+            }
+            next = next->next;
+        };
+        
+        ++(dest->nb_session_keys);        
     } else {
 
         // custom src

@@ -58,7 +58,7 @@ void playlist_parse_test(void)
 "#EXT-X-STREAM-INF:BANDWIDTH=1500000,CODECS=\"mp4a.40.2.avc1.4d401e\",RESOLUTION=1920x1080,HDCP-LEVEL=NONE\n"\
 "/path/to/stream_inf/1500.m3u8\n"\
 "#EXT-X-I-FRAME-STREAM-INF:URI=\"http://www.test.com\",BANDWIDTH=900000\n"\
-"#EXT-X-SESSION-DATA:DATA-ID=\"com.example.movie.title\",VALUE=\"value\",URI=\"http://www.test.com/data.json\""\
+"#EXT-X-SESSION-DATA:DATA-ID=\"com.example.movie.title\",VALUE=\"value\",URI=\"http://www.test.com/data.json\"\n"\
 "#EXT-X-SESSION-KEY:METHOD=AES-128,URI=\"http://www.test.com/key\""\
 "#EXT-X-INDEPENDENT-SEGMENTS\n"\
 "#EXT-X-START:TIME-OFFSET=10.0,PRECISE=YES\n";
@@ -74,6 +74,12 @@ void playlist_parse_test(void)
     CU_ASSERT_NOT_EQUAL(master.iframe_stream_infs.data, NULL);
     CU_ASSERT_EQUAL(master.iframe_stream_infs.next, NULL);
     CU_ASSERT_EQUAL(master.custom_tags.data, NULL);
+    CU_ASSERT_EQUAL(master.nb_session_keys, 1);
+    CU_ASSERT_EQUAL(master.session_keys.next, NULL);
+
+    hls_key_t *key = master.session_keys.data;
+    CU_ASSERT_EQUAL(key->method, KEY_METHOD_AES128);
+    CU_ASSERT_EQUAL(strcmp(key->uri, "http://www.test.com/key"), 0);
 
     hlsparse_master_term(&master);
     

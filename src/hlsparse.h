@@ -19,7 +19,7 @@
 
 // HLS tags
 #define EXTM3U                      "EXTM3U"
-#define EXTXVERSION                "EXT-X-VERSION"
+#define EXTXVERSION                 "EXT-X-VERSION"
 #define EXTINF                      "EXTINF"
 #define EXTXBYTERANGE               "EXT-X-BYTERANGE"
 #define EXTXDISCONTINUITY           "EXT-X-DISCONTINUITY"
@@ -328,6 +328,8 @@ typedef struct {
     stream_inf_list_t           stream_infs;
     iframe_stream_inf_list_t    iframe_stream_infs; 
     string_list_t               custom_tags;
+    key_list_t                  session_keys;
+    int                         nb_session_keys;
 } master_t;
 
 typedef struct {
