@@ -43,7 +43,7 @@ void key_init_test(void)
 {
     hls_key_t res;
     parse_key_init(&res);
-    CU_ASSERT_EQUAL(res.method, KEY_METHOD_NONE);
+    CU_ASSERT_EQUAL(res.method, KEY_METHOD_UNDEFINED);
     CU_ASSERT_EQUAL(res.key_format, NULL);
     CU_ASSERT_EQUAL(res.iv, NULL);
     CU_ASSERT_EQUAL(res.uri, NULL);
@@ -123,7 +123,7 @@ void stream_inf_init_test(void)
     CU_ASSERT_EQUAL(stream_inf.video, NULL);
     CU_ASSERT_EQUAL(stream_inf.uri, NULL);
     CU_ASSERT_EQUAL(stream_inf.frame_rate, 0);
-    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_NONE);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_UNDEFINED);
 
     parse_stream_inf_init(NULL);
 }
@@ -138,7 +138,7 @@ void iframe_stream_inf_init_test(void)
     CU_ASSERT_EQUAL(stream_inf.resolution.height, 0);
     CU_ASSERT_EQUAL(stream_inf.video, NULL);
     CU_ASSERT_EQUAL(stream_inf.uri, NULL);
-    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_NONE);
+    CU_ASSERT_EQUAL(stream_inf.hdcp_level, HDCP_LEVEL_UNDEFINED);
 
     parse_iframe_stream_inf_init(NULL);
 }

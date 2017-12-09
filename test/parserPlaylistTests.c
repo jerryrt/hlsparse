@@ -107,7 +107,7 @@ void media_playlist_init_test(void)
     CU_ASSERT_EQUAL(playlist.nb_keys, 0);
     CU_ASSERT_EQUAL(playlist.nb_maps, 0);
     CU_ASSERT_EQUAL(playlist.nb_custom_tags, 0);
-    CU_ASSERT_EQUAL(playlist.playlist_type, PLAYLIST_TYPE_VOD);
+    CU_ASSERT_EQUAL(playlist.playlist_type, PLAYLIST_TYPE_INVALID);
     CU_ASSERT_EQUAL(playlist.discontinuity_sequence, 0);
     CU_ASSERT_EQUAL(playlist.target_duration, 0.f);
     CU_ASSERT_EQUAL(playlist.duration, 0.f);
