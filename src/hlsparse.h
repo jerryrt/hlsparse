@@ -52,24 +52,114 @@
 #define HDCP_LEVEL_NONE             1
 #define HDCP_LEVEL_TYPE0            2
 
+// HLS tags
+#define EXTM3U                      "EXTM3U"
+#define EXTXVERSION                 "EXT-X-VERSION"
+#define EXTINF                      "EXTINF"
+#define EXTXBYTERANGE               "EXT-X-BYTERANGE"
+#define EXTXDISCONTINUITY           "EXT-X-DISCONTINUITY"
+#define EXTXKEY                     "EXT-X-KEY"
+#define EXTXMAP                     "EXT-X-MAP"
+#define EXTXDATERANGE               "EXT-X-DATERANGE"
+#define EXTXPROGRAMDATETIME         "EXT-X-PROGRAM-DATE-TIME"
+#define EXTXTARGETDURATION          "EXT-X-TARGETDURATION"
+#define EXTXMEDIASEQUENCE           "EXT-X-MEDIA-SEQUENCE"
+#define EXTXDISCONTINUTITYSEQUENCE  "EXT-X-DISCONTINUITY-SEQUENCE"
+#define EXTXENDLIST                 "EXT-X-ENDLIST"
+#define EXTXPLAYLISTTYPE            "EXT-X-PLAYLIST-TYPE"
+#define EXTXIFRAMESONLY             "EXT-X-I-FRAMES-ONLY"
+#define EXTXMEDIA                   "EXT-X-MEDIA"
+#define EXTXSTREAMINF               "EXT-X-STREAM-INF"
+#define EXTXIFRAMESTREAMINF         "EXT-X-I-FRAME-STREAM-INF"
+#define EXTXSESSIONDATA             "EXT-X-SESSION-DATA"
+#define EXTXSESSIONKEY              "EXT-X-SESSION-KEY"
+#define EXTXINDEPENDENTSEGMENTS     "EXT-X-INDEPENDENT-SEGMENTS"
+#define EXTXSTART                   "EXT-X-START"
+#define EXTXALLOWCACHE              "EXT-X-ALLOW-CACHE"
+#define EXTXDISCONTINUITYSEQ        "EXT-X-DISCONTINUITY-SEQUENCE"
+
+// HLS tag properties
+#define PROGRAMID                   "PROGRAM-ID"
+#define BANDWIDTH                   "BANDWIDTH"
+#define AVERAGEBANDWIDTH            "AVERAGE-BANDWIDTH"
+#define CODECS                      "CODECS"
+#define RESOLUTION                  "RESOLUTION"
+#define VIDEO                       "VIDEO"
+#define URI                         "URI"
+#define FRAMERATE                   "FRAME-RATE"
+#define HDCPLEVEL                   "HDCP-LEVEL"
+#define AUDIO                       "AUDIO"
+#define SUBTITLES                   "SUBTITLES"
+#define CLOSEDCAPTIONS              "CLOSED-CAPTIONS"
+#define METHOD                      "METHOD"
+#define KEY_IV                      "IV"
+#define KEYFORMAT                   "KEYFORMAT"
+#define KEYFORMATVERSIONS           "KEYFORMATVERSIONS"
+#define BYTERANGE                   "BYTERANGE"
+#define ID                          "ID"
+#define CLASS                       "CLASS"
+#define STARTDATE                   "START-DATE"
+#define ENDDATE                     "END-DATE"
+#define DURATION                    "DURATION"
+#define PLANNEDDURATION             "PLANNED-DURATION"
+#define XCLIENT                     "X-"
+#define SCTE35CMD                   "SCTE35-CMD"
+#define SCTE35OUT                   "SCTE35-OUT"
+#define SCTE35IN                    "SCTE35-IN"
+#define ENDONNEXT                   "END-ON-NEXT"
+#define TYPE                        "TYPE"
+#define GROUPID                     "GROUP-ID"
+#define NAME                        "NAME"
+#define AUTOSELECT                  "AUTOSELECT"
+#define FORCED                      "FORCED"
+#define DEFAULT                     "DEFAULT"
+#define YES                         "YES"
+#define NO                          "NO"
+#define LANGUAGE                    "LANGUAGE"
+#define ASSOCLANGUAGE               "ASSOC-LANGUAGE"
+#define INSTREAMID                  "INSTREAM-ID"
+#define CC1                         "CC1"
+#define CC2                         "CC2"
+#define CC3                         "CC3"
+#define CC4                         "CC4"
+#define SERVICE                     "SERVICE"
+#define CHARACTERISTICS             "CHARACTERISTICS"
+#define CHANNELS                    "CHANNELS"
+#define DATAID                      "DATA-ID"
+#define VALUE                       "VALUE"
+#define TIMEOFFSET                  "TIME-OFFSET"
+#define PRECISE                     "PRECISE"
+#define VOD                         "VOD"
+#define EVENT                       "EVENT"
+#define TYPE0                       "TYPE-0"
+#define NONE                        "NONE"
+#define AES128                      "AES-128"
+#define SAMPLEAES                   "SAMPLE-AES"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef int         HLSCode;
-typedef int         bool_t;
-typedef uint64_t    timestamp_t;
+typedef int         HLSCode;        // HLS_OK or HLS_ERROR
+typedef int         bool_t;         // HLS_TRUE or HLS_FALSE
+typedef uint64_t    timestamp_t;    // ISO timestamp as an integer
 
-typedef void* (*hlsparse_malloc_callback)(size_t);
-typedef void (*hlsparse_free_callback)(void *);
+typedef void* (*hlsparse_malloc_callback)(size_t);  // user memory allocator callback
+typedef void (*hlsparse_free_callback)(void *);     // user memory free callback
 
+/**
+ * Linked List of String values.
+ */
 typedef struct string_list {
     char *data;
     struct string_list *next;
 } string_list_t;
 
-typedef int param_type_t;
+typedef int param_type_t;       // type of parameter specified in param_list_t.
 
+/**
+ * Linked list of arbitary paramter data.
+ */
 typedef struct param_list {
     char *key;                  // name of the a parameter entry.
     union {
@@ -80,6 +170,10 @@ typedef struct param_list {
     size_t value_size;          // number of bytes used by value.data.
     struct param_list *next;    // next item in linked list
 } param_list_t;
+
+///////////////////////////////////////
+/// HLS Tag 'C' Structures
+///////////////////////////////////////
 
 typedef struct {
     int n, o;
@@ -197,46 +291,73 @@ typedef struct {
     bool_t precise;
 } start_t;
 
+/**
+ * Linked list of segments.
+ */
 typedef struct segment_list {
     segment_t                       *data;
     struct segment_list             *next;
 } segment_list_t;
 
+/**
+ * Linked list of session data tags.
+ */
 typedef struct session_data_list {
     session_data_t                  *data;
     struct session_data_list        *next;
 } session_data_list_t;
 
+/**
+ * Linked list of Keys.
+ */
 typedef struct key_list {
     hls_key_t                       *data;
     struct key_list                 *next;
 } key_list_t;
 
+/**
+ * Linked list of Stream Infs.
+ */
 typedef struct stream_inf_list {
     stream_inf_t                    *data;
     struct stream_inf_list          *next;
 } stream_inf_list_t;
 
+/**
+ * Linked list of iframe stream infs.
+ */
 typedef struct iframe_stream_inf_list {
     iframe_stream_inf_t *data;
     struct iframe_stream_inf_list   *next;
 } iframe_stream_inf_list_t;
 
+/**
+ * Linked list of Media Tags.
+ */
 typedef struct media_list {
     media_t                         *data;
     struct media_list               *next;
 } media_list_t;
 
+/**
+ * Linked list of Map Tags.
+ */
 typedef struct map_list {
     map_t                           *data;
     struct map_list                 *next;
 } map_list_t;
 
+/**
+ * Linked list of Daterange Tags.
+ */
 typedef struct daterange_list {
     daterange_t                     *data;
     struct daterange_list           *next;
 } daterange_list_t;
 
+/**
+ * Master Playlist Structure.
+ */
 typedef struct {
     int                         version;
     char                        *uri;
@@ -252,6 +373,9 @@ typedef struct {
     int                         nb_session_keys;
 } master_t;
 
+/**
+ * Media Playlist Structure.
+ */
 typedef struct {
     int                         version;
     int                         media_sequence;
@@ -284,13 +408,29 @@ typedef struct {
     segment_t                   *last_segment;                  
 } media_playlist_t;
 
+/**
+ * Global initialization of the library.
+ * This function or hlsparse_global_init_mem(m,f) must be called prior to any other API.
+ * 
+ * @returns HLS_OK on success.
+ */
 HLSCode hlsparse_global_init(void);
+
+/**
+ * Global initialization of the library with a custom memory allocator.
+ * This function or hlsparse_global_init(void) must be called prior to any other API.
+ * 
+ * @param m user defined malloc callback.
+ * @param f user defined free callback.
+ * @returns HLS_OK on success.
+ */
 HLSCode hlsparse_global_init_mem(hlsparse_malloc_callback m, hlsparse_free_callback f);
 
 /**
  * Initializes a master_t object
  *
  * @param dest The object to initialize
+ * @returns HLS_OK on success.
  */
 HLSCode hlsparse_master_init(master_t *dest);
 
@@ -298,15 +438,19 @@ HLSCode hlsparse_master_init(master_t *dest);
  * Initializes a media_playlist_t object
  *
  * @param dest The object to initialize
+ * @returns HLS_OK on success.
  */
 HLSCode hlsparse_media_playlist_init(media_playlist_t *dest);
 
 /**
  * Cleans up a master_t object freeing any resources.
  * The master_t object itself is not destroyed in the process.
- * Call parse_master_init to reinitialize the master_t after if has been destroyed
+ * Call parse_master_init to reinitialize the master_t after if has been destroyed.
+ * This will free any associated pointers, care must be taken when manipulating or
+ * creating playlists from scratch and attempting to terminate them.
  *
  * @param dest The master_t object to destroy
+ * @returns HLS_OK on success.
  */
 HLSCode hlsparse_master_term(master_t *dest);
 
@@ -314,9 +458,12 @@ HLSCode hlsparse_master_term(master_t *dest);
  * Cleans up a media_playlist_t object freeing any resources.
  * The media_playlist_t object itself is not destroyed in the process.
  * Call parse_media_playlist_init to reinitialize the media_playlisy_t after it has
- * been destroyed
+ * been destroyed.
+ * This will free any associated pointers, care must be taken when manipulating or
+ * creating playlists from scratch and attempting to terminate them.
  *
  * @param dest The media_playlist_t object to destroy
+ * @returns HLS_OK on success.
  */
 HLSCode hlsparse_media_playlist_term(media_playlist_t *dest);
 
@@ -346,6 +493,7 @@ int hlsparse_media_playlist(const char *src, size_t size, media_playlist_t *dest
  * @param dest A NULL pointer which will be assiged to the output UTF-8 string.
  * @param dest_size The size of the string assigned to 'dest'.
  * @param master The master playlist structure used to write a playlist from.
+ * @returns HLS_OK on success.
  */
 HLSCode hlswrite_master(char **dest, int *dest_size, master_t *master);
 
@@ -355,6 +503,7 @@ HLSCode hlswrite_master(char **dest, int *dest_size, master_t *master);
  * @param dest A NULL pointer which will be assiged to the output UTF-8 string.
  * @param dest_size The size of the string assigned to 'dest'.
  * @param master The media playlist structure used to write a playlist from.
+ * @returns HLS_OK on success.
  */
 HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist);
 
