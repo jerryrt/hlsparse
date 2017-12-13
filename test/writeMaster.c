@@ -115,8 +115,21 @@ void write_master_test(void)
 
     HLSCode res = hlswrite_master(&out, &size, &master);
 
-    printf("\n==========\n%s\n==========\n", out);
-    CU_ASSERT(1);
+    const char *master_output = 
+"#EXTM3U\n\
+#EXT-X-VERSION:4\n\
+#EXT-X-INDEPENDENT-SEGMENTS\n\
+#EXT-X-START:TIME-OFFSET=-2.000,PRECISE=NO\n\
+#EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID=\"group-one\",LANGUAGE=\"en-US\",ASSOC-LANGUAGE=\"en-US\",ASSOC-LANGUAGE=\"en-GB\",NAME=\"name\",DEFAULT=YES,AUTOSELECT=YES,FORCED=YES,INSTREAM-ID=\"CC3\",CHARACTERISTICS=\"public.accessibility.transcribes-spoken-dialog\",CHANNELS=\"6\"\n\
+#EXT-X-STREAM-INF:BANDWIDTH=800000,AVERAGE-BANDWIDTH=780000,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=1280x720,FRAME-RATE=29.970,HDCP-LEVEL=NONE,AUDIO=\"group-one\",VIDEO=\"group-two\",SUBTITLES=\"group-three\",CLOSED-CAPTIONS=\"cc\"\n\
+http://www.example.com/variant_01.m3u8\n\
+#EXT-X-STREAM-INF:BANDWIDTH=1200000,AVERAGE-BANDWIDTH=1150000,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=1280x720,FRAME-RATE=29.970,HDCP-LEVEL=TYPE-0,AUDIO=\"group-one\",VIDEO=\"group-two\",SUBTITLES=\"group-three\",CLOSED-CAPTIONS=\"cc\"\n\
+http://www.example.com/variant_02.m3u8\n\
+#EXT-X-I-FRAME-STREAM-INF:BANDWIDTH=800000,AVERAGE-BANDWIDTH=780000,CODECS=\"mp4a.40.2,avc1.4d401e\",RESOLUTION=1280x720,HDCP-LEVEL=NONE,VIDEO=\"group-two\",URI=\"http://www.example.com/iframe_variant_01.m3u8\"\n\
+#EXT-X-SESSION-DATA:DATA-ID=\"com.example.move.trailer\",VALUE=\"this shouldn\'t be here if \'uri\' is present\",URI=\"http://www.example.com/session_info.json\",LANGUAGE=\"en-US\"\n\
+#EXT-X-SESSION-KEY:METHOD=AES-128,URI=\"http://www.example.com/keys/01.key\",IV=0x0102030405060708090A0B0C0D0E0F10,KEYFORMAT=\"identity\",KEYFORMATVERSIONS=\"1/2/3\"\n";
+    
+    CU_ASSERT_EQUAL(strcmp(master_output, out), 0);
 }
 
 void write_media_test(void)
@@ -196,9 +209,43 @@ void write_media_test(void)
     int size = 0;
 
     HLSCode res = hlswrite_media(&out, &size, &media);
-    printf("\n==========\n%s\n==========\n", out);
 
-    CU_ASSERT(1);
+    const char *media_output =
+"#EXTM3U\n\
+#EXT-X-VERSION:4\n\
+#EXT-X-TARGETDURATION:10\n\
+#EXT-X-MEDIA-SEQUENCE:1034\n\
+#EXT-X-DISCONTINUITY-SEQUENCE:2\n\
+#EXT-X-PLAYLIST-TYPE:EVENT\n\
+#EXT-X-I-FRAMES-ONLY\n\
+#EXT-X-PROGRAM-DATE-TIME:2017-12-09T18:09:46.001Z\n\
+#EXT-X-KEY:METHOD=NONE\n\
+#EXTINF:10.000,\n\
+variant0/segment0.ts\n\
+#EXTINF:10.000,\n\
+variant0/segment1.ts\n\
+#EXTINF:10.000,\n\
+variant0/segment2.ts\n\
+#EXTINF:10.000,\n\
+variant0/segment3.ts\n\
+#EXT-X-DISCONTINUITY\n\
+#EXT-X-PROGRAM-DATE-TIME:2017-12-09T18:10:27.546Z\n\
+#EXTINF:8.495,\n\
+variant0/segment4.ts\n\
+#EXTINF:10.000,\n\
+variant0/segment5.ts\n\
+#EXT-X-KEY:METHOD=AES-128,URI=\"https://www.example.com/key0.key\",IV=0x0102030405060708090A0B0C0D0E0F10\n\
+#EXTINF:10.000,\n\
+variant0/segment6.ts\n\
+#EXT-X-BYTERANGE:940@188\n\
+#EXTINF:10.000,\n\
+variant0/segment7.ts\n\
+#EXTINF:10.000,\n\
+variant0/segment8.ts\n\
+#EXTINF:10.000,\n\
+variant0/segment9.ts\n";
+
+    CU_ASSERT_EQUAL(strcmp(media_output, out), 0);
 }
 
 void setup()
