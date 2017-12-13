@@ -13,7 +13,7 @@
  *
  * @param byte_range The byte_range to initialize
  */
-void parse_byte_range_init(byte_range_t *byte_range)
+void hlsparse_byte_range_init(byte_range_t *byte_range)
 {
     if(byte_range) {
         byte_range->n = 0;
@@ -26,7 +26,7 @@ void parse_byte_range_init(byte_range_t *byte_range)
  *
  * @param ext_inf The ext_inf to initialize
  */
-void parse_ext_inf_init(ext_inf_t *ext_inf)
+void hlsparse_ext_inf_init(ext_inf_t *ext_inf)
 {
     if(ext_inf) {
         ext_inf->duration = 0.f;
@@ -39,7 +39,7 @@ void parse_ext_inf_init(ext_inf_t *ext_inf)
  *
  * @param resoution The resolution object to initialize
  */
-void parse_resolution_init(resolution_t *resolution)
+void hlsparse_resolution_init(resolution_t *resolution)
 {
     if(resolution) {
         resolution->width = 0;
@@ -52,7 +52,7 @@ void parse_resolution_init(resolution_t *resolution)
  *
  * @param stream_inf The iframe_stream_inf to initialize
  */
-void parse_iframe_stream_inf_init(iframe_stream_inf_t *stream_inf)
+void hlsparse_iframe_stream_inf_init(iframe_stream_inf_t *stream_inf)
 {
     if(stream_inf) {
         memset(stream_inf, 0, sizeof(iframe_stream_inf_t));
@@ -64,7 +64,7 @@ void parse_iframe_stream_inf_init(iframe_stream_inf_t *stream_inf)
  *
  * @param stream_inf The stream_inf to initialize
  */
-void parse_stream_inf_init(stream_inf_t *stream_inf)
+void hlsparse_stream_inf_init(stream_inf_t *stream_inf)
 {
     if(stream_inf) {
         memset(stream_inf, 0, sizeof(stream_inf_t));
@@ -76,7 +76,7 @@ void parse_stream_inf_init(stream_inf_t *stream_inf)
  *
  * @param dest The dest to initialize
  */
-void parse_key_init(hls_key_t *dest)
+void hlsparse_key_init(hls_key_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(hls_key_t));
@@ -88,7 +88,7 @@ void parse_key_init(hls_key_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_map_init(map_t *dest)
+void hlsparse_map_init(map_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(map_t));
@@ -100,7 +100,7 @@ void parse_map_init(map_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_daterange_init(daterange_t *dest)
+void hlsparse_daterange_init(daterange_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(daterange_t));
@@ -112,7 +112,7 @@ void parse_daterange_init(daterange_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_media_init(media_t *dest)
+void hlsparse_media_init(media_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(media_t));
@@ -124,7 +124,7 @@ void parse_media_init(media_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_segment_init(segment_t *dest)
+void hlsparse_segment_init(segment_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(segment_t));
@@ -136,7 +136,7 @@ void parse_segment_init(segment_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_session_data_init(session_data_t *dest)
+void hlsparse_session_data_init(session_data_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(session_data_t));
@@ -148,7 +148,7 @@ void parse_session_data_init(session_data_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_start_init(start_t *dest)
+void hlsparse_start_init(start_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(start_t));
@@ -160,7 +160,7 @@ void parse_start_init(start_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_segment_list_init(segment_list_t *dest)
+void hlsparse_segment_list_init(segment_list_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(segment_list_t));
@@ -172,7 +172,7 @@ void parse_segment_list_init(segment_list_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_session_data_list_init(session_data_list_t *dest)
+void hlsparse_session_data_list_init(session_data_list_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(session_data_list_t));
@@ -184,7 +184,7 @@ void parse_session_data_list_init(session_data_list_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_key_list_init(key_list_t *dest)
+void hlsparse_key_list_init(key_list_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(key_list_t));
@@ -196,7 +196,7 @@ void parse_key_list_init(key_list_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_stream_inf_list_init(stream_inf_list_t *dest)
+void hlsparse_stream_inf_list_init(stream_inf_list_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(stream_inf_list_t));
@@ -208,7 +208,7 @@ void parse_stream_inf_list_init(stream_inf_list_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_iframe_stream_inf_list_init(iframe_stream_inf_list_t *dest)
+void hlsparse_iframe_stream_inf_list_init(iframe_stream_inf_list_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(iframe_stream_inf_list_t));
@@ -220,7 +220,7 @@ void parse_iframe_stream_inf_list_init(iframe_stream_inf_list_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_media_list_init(media_list_t *dest)
+void hlsparse_media_list_init(media_list_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(media_list_t));
@@ -232,7 +232,7 @@ void parse_media_list_init(media_list_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_map_list_init(map_list_t *dest)
+void hlsparse_map_list_init(map_list_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(map_list_t));
@@ -244,7 +244,7 @@ void parse_map_list_init(map_list_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_daterange_list_init(daterange_list_t *dest)
+void hlsparse_daterange_list_init(daterange_list_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(daterange_list_t));
@@ -256,7 +256,7 @@ void parse_daterange_list_init(daterange_list_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_string_list_init(string_list_t *dest)
+void hlsparse_string_list_init(string_list_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(string_list_t));
@@ -268,7 +268,7 @@ void parse_string_list_init(string_list_t *dest)
  *
  * @param dest The dest object to initialize
  */
-void parse_param_list_init(param_list_t *dest)
+void hlsparse_param_list_init(param_list_t *dest)
 {
     if(dest) {
         memset(dest, 0, sizeof(param_list_t));
@@ -299,7 +299,7 @@ void parse_param_term(char ***params, int size)
  *
  * @param ext_inf The ext_inf to cleanup
  */
-void parse_ext_inf_term(ext_inf_t *ext_inf)
+void hlsparse_ext_inf_term(ext_inf_t *ext_inf)
 {
     if(ext_inf) {
         char **params[] = { &ext_inf->title };
@@ -315,7 +315,7 @@ void parse_ext_inf_term(ext_inf_t *ext_inf)
  *
  * @param stream_inf The stream_inf to cleanup
  */
-void parse_iframe_stream_inf_term(iframe_stream_inf_t *stream_inf)
+void hlsparse_iframe_stream_inf_term(iframe_stream_inf_t *stream_inf)
 {
     if(stream_inf) {
         char **params[] = {
@@ -336,7 +336,7 @@ void parse_iframe_stream_inf_term(iframe_stream_inf_t *stream_inf)
  *
  * @param stream_inf The stream_inf to cleanup
  */
-void parse_stream_inf_term(stream_inf_t *stream_inf)
+void hlsparse_stream_inf_term(stream_inf_t *stream_inf)
 {
     if(stream_inf) {
         char **params[] = {
@@ -361,7 +361,7 @@ void parse_stream_inf_term(stream_inf_t *stream_inf)
  *
  * @param dest The object to cleanup
  */
-void parse_key_term(hls_key_t *dest)
+void hlsparse_key_term(hls_key_t *dest)
 {
     if(dest) {
         char **params[] = {
@@ -383,7 +383,7 @@ void parse_key_term(hls_key_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_map_term(map_t *dest)
+void hlsparse_map_term(map_t *dest)
 {
     if(dest) {
         char **params[] = {
@@ -402,7 +402,7 @@ void parse_map_term(map_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_daterange_term(daterange_t *dest)
+void hlsparse_daterange_term(daterange_t *dest)
 {
     if(dest) {
         char **params[] = {
@@ -418,7 +418,7 @@ void parse_daterange_term(daterange_t *dest)
         dest->scte35_in_size = 0;
 
         parse_param_term(params, 5);
-        parse_param_list_term(&dest->client_attributes);
+        hlsparse_param_list_term(&dest->client_attributes);
     }
 }
 
@@ -430,7 +430,7 @@ void parse_daterange_term(daterange_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_media_term(media_t *dest)
+void hlsparse_media_term(media_t *dest)
 {
     if(dest) {
         char **params[] = {
@@ -455,7 +455,7 @@ void parse_media_term(media_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_segment_term(segment_t *dest)
+void hlsparse_segment_term(segment_t *dest)
 {
     if(dest) {
         char ** params[] = {
@@ -465,7 +465,7 @@ void parse_segment_term(segment_t *dest)
 
         parse_param_term(params, 2);
         
-        parse_string_list_term(&dest->custom_tags);
+        hlsparse_string_list_term(&dest->custom_tags);
     }
 }
 
@@ -477,7 +477,7 @@ void parse_segment_term(segment_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_session_data_term(session_data_t *dest)
+void hlsparse_session_data_term(session_data_t *dest)
 {
     if(dest) {
         char ** params[] = {
@@ -499,18 +499,18 @@ void parse_session_data_term(session_data_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_segment_list_term(segment_list_t *dest)
+void hlsparse_segment_list_term(segment_list_t *dest)
 {
 
     if(dest) {
         if(dest->data) {
-            parse_segment_term(dest->data);
+            hlsparse_segment_term(dest->data);
             hls_free(dest->data);
             dest->data = NULL;
         }
 
         if(dest->next) {
-            parse_segment_list_term(dest->next);
+            hlsparse_segment_list_term(dest->next);
             hls_free(dest->next);
             dest->next = NULL;
         }
@@ -525,18 +525,18 @@ void parse_segment_list_term(segment_list_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_session_data_list_term(session_data_list_t *dest)
+void hlsparse_session_data_list_term(session_data_list_t *dest)
 {
     if(dest) {
         if(dest->data) {
-            parse_session_data_term(dest->data);
+            hlsparse_session_data_term(dest->data);
             hls_free(dest->data);
         }
 
         session_data_list_t *ptr = dest->next;
 
         if(ptr) {
-            parse_session_data_list_term(ptr);
+            hlsparse_session_data_list_term(ptr);
             hls_free(ptr);
         }
     }
@@ -554,7 +554,7 @@ void parse_key_list_term(key_list_t *dest)
 {
     if(dest) {
         if(dest->data) {
-            parse_key_term(dest->data);
+            hlsparse_key_term(dest->data);
             hls_free(dest->data);
         }
 
@@ -575,18 +575,18 @@ void parse_key_list_term(key_list_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_media_list_term(media_list_t *dest)
+void hlsparse_media_list_term(media_list_t *dest)
 {
     if(dest) {
         if(dest->data) {
-            parse_media_term(dest->data);
+            hlsparse_media_term(dest->data);
             hls_free(dest->data);
         }
 
         media_list_t *ptr = dest->next;
 
         if(ptr) {
-            parse_media_list_term(ptr);
+            hlsparse_media_list_term(ptr);
             hls_free(ptr);
         }
     }
@@ -604,7 +604,7 @@ void parse_map_list_term(map_list_t *dest)
 {
     if(dest) {
         if(dest->data) {
-            parse_map_term(dest->data);
+            hlsparse_map_term(dest->data);
             hls_free(dest->data);
         }
 
@@ -625,18 +625,18 @@ void parse_map_list_term(map_list_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_daterange_list_term(daterange_list_t *dest)
+void hlsparse_daterange_list_term(daterange_list_t *dest)
 {
     if(dest) {
         if(dest->data) {
-            parse_daterange_term(dest->data);
+            hlsparse_daterange_term(dest->data);
             hls_free(dest->data);
         }
 
         daterange_list_t *ptr = dest->next;
 
         if(ptr) {
-            parse_daterange_list_term(ptr);
+            hlsparse_daterange_list_term(ptr);
             hls_free(ptr);
         }
     }
@@ -650,19 +650,19 @@ void parse_daterange_list_term(daterange_list_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_iframe_stream_inf_list_term(iframe_stream_inf_list_t *dest)
+void hlsparse_iframe_stream_inf_list_term(iframe_stream_inf_list_t *dest)
 {
 
     if(dest) {
         if(dest->data) {
-            parse_iframe_stream_inf_term(dest->data);
+            hlsparse_iframe_stream_inf_term(dest->data);
             hls_free(dest->data);
         }
 
         iframe_stream_inf_list_t *ptr = dest->next;
 
         if(ptr) {
-            parse_iframe_stream_inf_list_term(ptr);
+            hlsparse_iframe_stream_inf_list_term(ptr);
             hls_free(ptr);
         }
     }
@@ -676,18 +676,18 @@ void parse_iframe_stream_inf_list_term(iframe_stream_inf_list_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_stream_inf_list_term(stream_inf_list_t *dest)
+void hlsparse_stream_inf_list_term(stream_inf_list_t *dest)
 {
     if(dest) {
         if(dest->data) {
-            parse_stream_inf_term(dest->data);
+            hlsparse_stream_inf_term(dest->data);
             hls_free(dest->data);
         }
 
         stream_inf_list_t *ptr = dest->next;
 
         if(ptr) {
-            parse_stream_inf_list_term(ptr);
+            hlsparse_stream_inf_list_term(ptr);
             hls_free(ptr);
         }
     }
@@ -701,7 +701,7 @@ void parse_stream_inf_list_term(stream_inf_list_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_string_list_term(string_list_t *dest)
+void hlsparse_string_list_term(string_list_t *dest)
 {
     if(dest) {
         if(dest->data) {
@@ -711,7 +711,7 @@ void parse_string_list_term(string_list_t *dest)
         string_list_t *ptr = dest->next;
 
         if(ptr) {
-            parse_string_list_term(ptr);
+            hlsparse_string_list_term(ptr);
             hls_free(ptr);
         }
     }
@@ -725,7 +725,7 @@ void parse_string_list_term(string_list_t *dest)
  *
  * @param dest The object to cleanup
  */
-void parse_param_list_term(param_list_t *dest)
+void hlsparse_param_list_term(param_list_t *dest)
 {
     if(dest) {
         if(dest->key) {
@@ -743,7 +743,7 @@ void parse_param_list_term(param_list_t *dest)
         dest->next = NULL;
 
         if(ptr) {
-            parse_param_list_term(ptr);
+            hlsparse_param_list_term(ptr);
             hls_free(ptr);
         }
     }
@@ -1166,7 +1166,7 @@ int parse_daterange_tag(const char *src, size_t size, daterange_t *dest)
             }else{
                 // allocate a new parameter.
                 param = (param_list_t*) hls_malloc(sizeof(param_list_t));
-                parse_param_list_init(param);
+                hlsparse_param_list_init(param);
                 // find the last value in the link list, we'll attach the new one
                 // to this one's "next" property.
                 param_list_t *prev = &dest->client_attributes;

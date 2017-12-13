@@ -29,7 +29,7 @@ void write_master_test(void)
     master.start.precise - HLS_FALSE;
 
     media_t media0;
-    parse_media_init(&media0);
+    hlsparse_media_init(&media0);
 
     media0.type = MEDIA_TYPE_VIDEO;
     media0.name = "name";
@@ -47,7 +47,7 @@ void write_master_test(void)
     master.media.next = NULL;
 
     stream_inf_t inf_0;
-    parse_stream_inf_init(&inf_0);
+    hlsparse_stream_inf_init(&inf_0);
     inf_0.bandwidth = 800000;
     inf_0.avg_bandwidth = 780000;
     inf_0.codecs = "mp4a.40.2,avc1.4d401e";
@@ -64,7 +64,7 @@ void write_master_test(void)
 
     stream_inf_list_t inf_list_1;
     stream_inf_t inf_1;
-    parse_stream_inf_init(&inf_1);
+    hlsparse_stream_inf_init(&inf_1);
     inf_1.bandwidth = 1200000;
     inf_1.avg_bandwidth = 1150000;
     inf_1.codecs = "mp4a.40.2,avc1.4d401e";
@@ -82,7 +82,7 @@ void write_master_test(void)
     master.stream_infs.next = &inf_list_1;
 
     iframe_stream_inf_t ifinf_0;
-    parse_iframe_stream_inf_init(&ifinf_0);
+    hlsparse_iframe_stream_inf_init(&ifinf_0);
     ifinf_0.bandwidth = 800000;
     ifinf_0.avg_bandwidth = 780000;
     ifinf_0.codecs = "mp4a.40.2,avc1.4d401e";
@@ -153,8 +153,8 @@ void write_media_test(void)
     key_list_t key_list_1;
     timestamp_t pdt = 1512842986001;
 
-    parse_key_init(&keys[0]);
-    parse_key_init(&keys[1]);
+    hlsparse_key_init(&keys[0]);
+    hlsparse_key_init(&keys[1]);
 
     media.keys.data = &keys[0];
     media.keys.next = &key_list_1;
@@ -169,7 +169,7 @@ void write_media_test(void)
     int i;
     for(i=0; i<media.nb_segments; ++i) {
         segment_t *seg = &segs[i];
-        parse_segment_init(seg);
+        hlsparse_segment_init(seg);
 
         if(i == 4) {
             // modify the 5th segment's PDT and add a DISCONTINUITY

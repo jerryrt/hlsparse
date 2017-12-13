@@ -54,11 +54,11 @@ HLSCode hlsparse_master_term(master_t *dest)
     };
 
     parse_param_term(params, 1);
-    parse_string_list_term(&dest->custom_tags);
-    parse_session_data_list_term(&dest->session_data);
-    parse_media_list_term(&dest->media);
-    parse_stream_inf_list_term(&dest->stream_infs);
-    parse_iframe_stream_inf_list_term(&dest->iframe_stream_infs);
+    hlsparse_string_list_term(&dest->custom_tags);
+    hlsparse_session_data_list_term(&dest->session_data);
+    hlsparse_media_list_term(&dest->media);
+    hlsparse_stream_inf_list_term(&dest->stream_infs);
+    hlsparse_iframe_stream_inf_list_term(&dest->iframe_stream_infs);
 
     return HLS_OK;
 }
@@ -73,10 +73,10 @@ HLSCode hlsparse_media_playlist_term(media_playlist_t *dest)
     };
 
     parse_param_term(params, 1);
-    parse_string_list_term(&dest->custom_tags);
-    parse_segment_list_term(&dest->segments);
+    hlsparse_string_list_term(&dest->custom_tags);
+    hlsparse_segment_list_term(&dest->segments);
     parse_map_list_term(&dest->maps);
-    parse_daterange_list_term(&dest->dateranges);
+    hlsparse_daterange_list_term(&dest->dateranges);
     
     return HLS_OK;
 }
