@@ -135,8 +135,22 @@ void write_media_test(void)
 
     media.nb_segments = 10;
     segment_t segs[10];
+    hls_key_t keys[2];
     segment_list_t seg_lists[9];
+    key_list_t key_list_1;
     timestamp_t pdt = 1512842986001;
+
+    parse_key_init(&keys[0]);
+    parse_key_init(&keys[1]);
+
+    media.keys.data = &keys[0];
+    media.keys.next = &key_list_1;
+    key_list_1.data = &keys[1];
+    key_list_1.next = NULL;
+    keys[0].method = KEY_METHOD_NONE;
+    keys[1].iv = (char[]){0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+    keys[1].uri = "https://www.example.com/key0.key";
+    keys[1].method = KEY_METHOD_AES128;
 
     segment_list_t *seg_list = &media.segments;
     int i;
@@ -156,6 +170,12 @@ void write_media_test(void)
             seg->byte_range.o = 188;
         }else{
             seg->duration = 10.f;
+        }
+
+        if(i >= 6) {
+            seg->key_index = 1;
+        }else{
+            seg->key_index = 0;
         }
 
         seg->pdt = pdt;

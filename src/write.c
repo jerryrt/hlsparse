@@ -14,21 +14,21 @@
 #define PAGE_SIZE   (4096) // 4KB Page size
 
 #define ADD_TAG(tag_name) \
-    latest = pgprintf(latest, "%s\n", tag_name);
+    latest = pgprintf(latest, "#%s\n", tag_name);
 #define ADD_TAG_IF_TRUE(tag_name, value) \
-    if(value == HLS_TRUE) { latest = pgprintf(latest, "%s\n", tag_name); }
+    if(value == HLS_TRUE) { latest = pgprintf(latest, "#%s\n", tag_name); }
 #define ADD_XSTART_TAG_OPTL(value) \
-    if(value.time_offset != 0.f) { latest = pgprintf(latest, "%s:%s=%.3f,%s=%s\n", EXTXSTART, TIMEOFFSET, value.time_offset, PRECISE, (value.precise == HLS_TRUE ? YES : NO)); }
+    if(value.time_offset != 0.f) { latest = pgprintf(latest, "#%s:%s=%.3f,%s=%s\n", EXTXSTART, TIMEOFFSET, value.time_offset, PRECISE, (value.precise == HLS_TRUE ? YES : NO)); }
 #define ADD_TAG_INT(tag_name, value) \
-    latest = pgprintf(latest, "%s:%d\n", tag_name, value);
+    latest = pgprintf(latest, "#%s:%d\n", tag_name, value);
 #define ADD_TAG_ENUM(tag_name, value) \
-    latest = pgprintf(latest, "%s:%s\n", tag_name, value);
+    latest = pgprintf(latest, "#%s:%s\n", tag_name, value);
 #define START_TAG_ENUM(tag_name, param_name, value) \
-    latest = pgprintf(latest, "%s:%s=%s", tag_name, param_name, value);
+    latest = pgprintf(latest, "#%s:%s=%s", tag_name, param_name, value);
 #define START_TAG_STR(tag_name, param_name, value) \
-    latest = pgprintf(latest, "%s:%s=\"%s\"", tag_name, param_name, value);
+    latest = pgprintf(latest, "#%s:%s=\"%s\"", tag_name, param_name, value);
 #define START_TAG_INT(tag_name, param_name, value) \
-    latest = pgprintf(latest, "%s:%s=%d", tag_name, param_name, value);
+    latest = pgprintf(latest, "#%s:%s=%d", tag_name, param_name, value);
 #define END_TAG() \
     latest = pgprintf(latest, "\n");
 #define ADD_PARAM_STR(param_name, value) \
@@ -209,8 +209,38 @@ HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist)
     }
 
     int i;
+    int key_idx = -1; // -1 == no key
     segment_list_t *seg = &playlist->segments;
-    for(i=0; i<playlist->nb_segments; ++i) {
+
+    for(i=0; i<playlist->nb_segments; ++i)
+    {
+        // new Key index?
+        if(seg->data->key_index > key_idx) {
+            key_idx = seg->data->key_index;
+            // find the key
+            int j=0;
+            key_list_t *key_list = &playlist->keys;
+            hls_key_t *key = NULL;  
+            while(key_list && key_list->data && j++ <= key_idx) {
+                key = key_list->data;
+                key_list = key_list->next;
+            }
+
+            // add key tag
+            if(key) {
+                switch(key->method) {
+                    case KEY_METHOD_NONE: START_TAG_ENUM(EXTXKEY, METHOD, NONE); break;
+                    case KEY_METHOD_AES128: START_TAG_ENUM(EXTXKEY, METHOD, AES128); break;
+                    case KEY_METHOD_SAMPLEAES: START_TAG_ENUM(EXTXKEY, METHOD, SAMPLEAES); break;
+                }
+                ADD_PARAM_STR_OPTL(URI, key->uri);
+                ADD_PARAM_HEX_OPTL(KEY_IV, key->iv, 16);
+                ADD_PARAM_STR_OPTL(KEYFORMAT, key->key_format);
+                ADD_PARAM_STR_OPTL(KEYFORMATVERSIONS, key->key_format_versions);
+                END_TAG();
+            }
+        }
+
         if(seg->data->discontinuity == HLS_TRUE) {
             ADD_TAG(EXTXDISCONTINUITY);
             char buf[30];
@@ -219,17 +249,17 @@ HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist)
         }
         if(seg->data->byte_range.n > 0) {
             if(seg->data->byte_range.o != 0) {
-                latest = pgprintf(latest, "%s:%d@%d\n", EXTXBYTERANGE, seg->data->byte_range.n, seg->data->byte_range.o);
+                latest = pgprintf(latest, "#%s:%d@%d\n", EXTXBYTERANGE, seg->data->byte_range.n, seg->data->byte_range.o);
             }else{
-                latest = pgprintf(latest, "%s:%d\n", EXTXBYTERANGE, seg->data->byte_range.n);
+                latest = pgprintf(latest, "#%s:%d\n", EXTXBYTERANGE, seg->data->byte_range.n);
             }
         }
         if(seg->data->title) {
-            latest = pgprintf(latest, "%s:%.3f,%s\n", EXTINF, seg->data->duration, seg->data->title);
+            latest = pgprintf(latest, "#%s:%.3f,%s\n", EXTINF, seg->data->duration, seg->data->title);
         }else{
-            latest = pgprintf(latest, "%s:%.3f,\n", EXTINF, seg->data->duration);
+            latest = pgprintf(latest, "#%s:%.3f,\n", EXTINF, seg->data->duration);
         }
-        ADD_TAG(seg->data->uri);
+        ADD_URI(seg->data->uri);
         seg = seg->next;
     }
 
@@ -281,10 +311,11 @@ page_t *pgprintf(page_t *page, const char *format, ...)
     return page;
 }
 
-void page_to_str(const page_t *page, char **dest, int *dest_size)
+void page_to_str(page_t *page, char **dest, int *dest_size)
 {
     int full_size = 0;
-    const page_t *pg_ptr = page;
+    // write a NULL terminator
+    const page_t *pg_ptr = write_to_page(page, "\00", 1);
 
     while(pg_ptr) {
         full_size += pg_ptr->cur - pg_ptr->buffer;
