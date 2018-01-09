@@ -158,7 +158,7 @@ typedef struct string_list {
 typedef int param_type_t;       // type of parameter specified in param_list_t.
 
 /**
- * Linked list of arbitary paramter data.
+ * Linked list of arbitary parameter data.
  */
 typedef struct param_list {
     char *key;                  // name of the a parameter entry.
@@ -276,7 +276,7 @@ typedef struct {
     timestamp_t pdt;
     timestamp_t pdt_end;
     byte_range_t byte_range;
-    string_list_t custom_tags;
+    string_list_t custom_tags;  // tags associated to this segment the parser didn't recognize
 } segment_t;
 
 typedef struct {
