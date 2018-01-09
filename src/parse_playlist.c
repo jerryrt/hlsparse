@@ -29,7 +29,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
     } else if (EQUAL(pt, EXTXMEDIA)) {
 
         media_t *media = hls_malloc(sizeof(media_t));
-        parse_media_init(media);
+        hlsparse_media_init(media);
 
         pt += parse_media(pt, size - (pt - src), media);
 
@@ -41,7 +41,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
                 break;
             } else if(!next->next) {
                 next->next = hls_malloc(sizeof(media_list_t));
-                parse_media_list_init(next->next);
+                hlsparse_media_list_init(next->next);
                 next->next->data = media;
                 break;
             }
@@ -57,7 +57,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
     } else if (EQUAL(pt, EXTXSTREAMINF)) {
 
         stream_inf_t *stream_inf = hls_malloc(sizeof(stream_inf_t));
-        parse_stream_inf_init(stream_inf);
+        hlsparse_stream_inf_init(stream_inf);
 
         pt += parse_stream_inf(pt, size - (pt - src), stream_inf);
 
@@ -83,7 +83,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
                 break;
             } else if(!next->next) {
                 next->next = hls_malloc(sizeof(stream_inf_list_t));
-                parse_stream_inf_list_init(next->next);
+                hlsparse_stream_inf_list_init(next->next);
                 next->next->data = stream_inf;
                 break;
             }
@@ -93,7 +93,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
     } else if (EQUAL(pt, EXTXIFRAMESTREAMINF)) {
 
         iframe_stream_inf_t *stream_inf = hls_malloc(sizeof(iframe_stream_inf_t));
-        parse_iframe_stream_inf_init(stream_inf);
+        hlsparse_iframe_stream_inf_init(stream_inf);
         pt += parse_iframe_stream_inf(pt, size - (pt - src), stream_inf);
 
         char *path = stream_inf->uri;
@@ -107,7 +107,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
                 break;
             } else if(!next->next) {
                 next->next = hls_malloc(sizeof(iframe_stream_inf_list_t));
-                parse_iframe_stream_inf_list_init(next->next);
+                hlsparse_iframe_stream_inf_list_init(next->next);
                 next->next->data = stream_inf;
                 break;
             }
@@ -117,7 +117,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
     } else if (EQUAL(pt, EXTXSESSIONDATA)) {
 
         session_data_t *session_data = hls_malloc(sizeof(session_data_t));
-        parse_session_data_init(session_data);
+        hlsparse_session_data_init(session_data);
         ;
         pt += parse_session_data(pt, size - (pt - src), session_data);
 
@@ -129,7 +129,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
                 break;
             } else if(!next->next) {
                 next->next = hls_malloc(sizeof(session_data_list_t));
-                parse_session_data_list_init(next->next);
+                hlsparse_session_data_list_init(next->next);
                 next->next->data = session_data;
                 break;
             }
@@ -144,7 +144,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
 
         ++pt;
         hls_key_t* key = hls_malloc(sizeof(hls_key_t));
-        parse_key_init(key);
+        hlsparse_key_init(key);
         pt += parse_key(pt, size - (pt - src), key);
 
         if(key->method != KEY_METHOD_NONE && key->method != KEY_METHOD_INVALID) {
@@ -159,7 +159,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
                 break;
             } else if(!next->next) {
                 next->next = hls_malloc(sizeof(hls_key_t));
-                parse_key_list_init(next->next);
+                hlsparse_key_list_init(next->next);
                 next->next->data = key;
                 break;
             }
@@ -182,7 +182,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
                     break;
                 } else if(!next->next) {
                     next->next = hls_malloc(sizeof(string_list_t));
-                    parse_string_list_init(next->next);
+                    hlsparse_string_list_init(next->next);
                     next->next->data = custom_tag;
                     break;
                 }
@@ -269,7 +269,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
     } else if(EQUAL(pt, EXTINF)) {
         ++pt;
         segment_t *segment = hls_malloc(sizeof(segment_t));
-        parse_segment_init(segment);
+        hlsparse_segment_init(segment);
 
         segment->byte_range.n = dest->next_segment_byterange.n;
         segment->byte_range.o = dest->next_segment_byterange.o;
@@ -316,7 +316,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
                 break;
             } else if(!next->next) {
                 next->next = hls_malloc(sizeof(segment_t));
-                parse_segment_list_init(next->next);
+                hlsparse_segment_list_init(next->next);
                 next->next->data = segment;
                 break;
             }
@@ -337,7 +337,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
     } else if(EQUAL(pt, EXTXKEY)) {
         ++pt;
         hls_key_t* key = hls_malloc(sizeof(hls_key_t));
-        parse_key_init(key);
+        hlsparse_key_init(key);
         pt += parse_key(pt, size - (pt - src), key);
 
         if(key->method != KEY_METHOD_NONE && key->method != KEY_METHOD_INVALID) {
@@ -353,7 +353,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
                 break;
             } else if(!next->next) {
                 next->next = hls_malloc(sizeof(hls_key_t));
-                parse_key_list_init(next->next);
+                hlsparse_key_list_init(next->next);
                 next->next->data = key;
                 break;
             }
@@ -365,7 +365,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
     } else if(EQUAL(pt, EXTXMAP)) {
         ++pt;
         map_t *map = hls_malloc(sizeof(map_t));;
-        parse_map_init(map);
+        hlsparse_map_init(map);
         pt += parse_map(pt, size - (pt - src), map);
         map_list_t *next = &dest->maps;
 
@@ -375,7 +375,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
                 break;
             } else if(!next->next) {
                 next->next = hls_malloc(sizeof(map_t));
-                parse_map_list_init(next->next);
+                hlsparse_map_list_init(next->next);
                 next->next->data = map;
                 break;
             }
@@ -387,7 +387,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
     } else if(EQUAL(pt, EXTXDATERANGE)) {
         ++pt;
         daterange_t *daterange = hls_malloc(sizeof(daterange_t));;
-        parse_daterange_init(daterange);
+        hlsparse_daterange_init(daterange);
         pt += parse_daterange(pt, size - (pt - src), daterange);
         daterange->pdt = dest->next_segment_pdt;
 
@@ -400,7 +400,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
                 break;
             } else if(!next->next) {
                 next->next = hls_malloc(sizeof(daterange_t));
-                parse_daterange_list_init(next->next);
+                hlsparse_daterange_list_init(next->next);
                 next->next->data = daterange;
                 break;
             }
@@ -425,7 +425,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
                     break;
                 } else if(!next->next) {
                     next->next = hls_malloc(sizeof(string_list_t));
-                    parse_string_list_init(next->next);
+                    hlsparse_string_list_init(next->next);
                     next->next->data = custom_tag;
                     break;
                 }

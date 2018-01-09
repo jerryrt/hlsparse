@@ -17,6 +17,41 @@
 #define HLS_TRUE    (1)
 #define HLS_FALSE   (0)
 
+// HLS tag enums
+#define KEY_METHOD_UNDEFINED        0
+#define KEY_METHOD_NONE             1
+#define KEY_METHOD_AES128           2
+#define KEY_METHOD_SAMPLEAES        3
+#define KEY_METHOD_INVALID          4
+
+#define MEDIA_TYPE_NONE             0
+#define MEDIA_TYPE_VIDEO            1
+#define MEDIA_TYPE_AUDIO            2
+#define MEDIA_TYPE_SUBTITLES        3
+#define MEDIA_TYPE_CLOSEDCAPTIONS   4
+#define MEDIA_TYPE_INVALID          5
+
+#define MEDIA_INSTREAMID_NONE       0
+#define MEDIA_INSTREAMID_CC1        1
+#define MEDIA_INSTREAMID_CC2        2
+#define MEDIA_INSTREAMID_CC3        3
+#define MEDIA_INSTREAMID_CC4        4
+#define MEDIA_INSTREAMID_SERVICE    5
+#define MEDIA_INSTREAMID_INVALID    6
+
+#define PLAYLIST_TYPE_VOD           1
+#define PLAYLIST_TYPE_EVENT         2
+#define PLAYLIST_TYPE_INVALID       0
+
+#define PARAM_TYPE_NONE             0
+#define PARAM_TYPE_DATA             1
+#define PARAM_TYPE_STRING           2
+#define PARAM_TYPE_FLOAT            3
+
+#define HDCP_LEVEL_UNDEFINED        0
+#define HDCP_LEVEL_NONE             1
+#define HDCP_LEVEL_TYPE0            2
+
 // HLS tags
 #define EXTM3U                      "EXTM3U"
 #define EXTXVERSION                 "EXT-X-VERSION"
@@ -98,58 +133,33 @@
 #define EVENT                       "EVENT"
 #define TYPE0                       "TYPE-0"
 #define NONE                        "NONE"
-
-// HLS tag enums
-#define KEY_METHOD_NONE             0
-#define KEY_METHOD_AES128           1
-#define KEY_METHOD_SAMPLEAES        2
-#define KEY_METHOD_INVALID          3
-
-#define MEDIA_TYPE_NONE             0
-#define MEDIA_TYPE_VIDEO            1
-#define MEDIA_TYPE_AUDIO            2
-#define MEDIA_TYPE_SUBTITLES        3
-#define MEDIA_TYPE_CLOSEDCAPTIONS   4
-#define MEDIA_TYPE_INVALID          5
-
-#define MEDIA_INSTREAMID_NONE       0
-#define MEDIA_INSTREAMID_CC1        1
-#define MEDIA_INSTREAMID_CC2        2
-#define MEDIA_INSTREAMID_CC3        3
-#define MEDIA_INSTREAMID_CC4        4
-#define MEDIA_INSTREAMID_SERVICE    5
-#define MEDIA_INSTREAMID_INVALID    6
-
-#define PLAYLIST_TYPE_VOD           0
-#define PLAYLIST_TYPE_EVENT         1
-#define PLAYLIST_TYPE_INVALID       2
-
-#define PARAM_TYPE_NONE             0
-#define PARAM_TYPE_DATA             1
-#define PARAM_TYPE_STRING           2
-#define PARAM_TYPE_FLOAT            3
-
-#define HDCP_LEVEL_NONE             0
-#define HDCP_LEVEL_TYPE0            1
+#define AES128                      "AES-128"
+#define SAMPLEAES                   "SAMPLE-AES"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef int         HLSCode;
-typedef int         bool_t;
-typedef uint64_t    timestamp_t;
+typedef int         HLSCode;        // HLS_OK or HLS_ERROR
+typedef int         bool_t;         // HLS_TRUE or HLS_FALSE
+typedef uint64_t    timestamp_t;    // ISO timestamp as an integer
 
-typedef void* (*hlsparse_malloc_callback)(size_t);
-typedef void (*hlsparse_free_callback)(void *);
+typedef void* (*hlsparse_malloc_callback)(size_t);  // user memory allocator callback
+typedef void (*hlsparse_free_callback)(void *);     // user memory free callback
 
+/**
+ * Linked List of String values.
+ */
 typedef struct string_list {
     char *data;
     struct string_list *next;
 } string_list_t;
 
-typedef int param_type_t;
+typedef int param_type_t;       // type of parameter specified in param_list_t.
 
+/**
+ * Linked list of arbitary parameter data.
+ */
 typedef struct param_list {
     char *key;                  // name of the a parameter entry.
     union {
@@ -160,6 +170,10 @@ typedef struct param_list {
     size_t value_size;          // number of bytes used by value.data.
     struct param_list *next;    // next item in linked list
 } param_list_t;
+
+///////////////////////////////////////
+/// HLS Tag 'C' Structures
+///////////////////////////////////////
 
 typedef struct {
     int n, o;
@@ -262,7 +276,7 @@ typedef struct {
     timestamp_t pdt;
     timestamp_t pdt_end;
     byte_range_t byte_range;
-    string_list_t custom_tags;
+    string_list_t custom_tags;  // tags associated to this segment the parser didn't recognize
 } segment_t;
 
 typedef struct {
@@ -277,46 +291,73 @@ typedef struct {
     bool_t precise;
 } start_t;
 
+/**
+ * Linked list of segments.
+ */
 typedef struct segment_list {
     segment_t                       *data;
     struct segment_list             *next;
 } segment_list_t;
 
+/**
+ * Linked list of session data tags.
+ */
 typedef struct session_data_list {
     session_data_t                  *data;
     struct session_data_list        *next;
 } session_data_list_t;
 
+/**
+ * Linked list of Keys.
+ */
 typedef struct key_list {
     hls_key_t                       *data;
     struct key_list                 *next;
 } key_list_t;
 
+/**
+ * Linked list of Stream Infs.
+ */
 typedef struct stream_inf_list {
     stream_inf_t                    *data;
     struct stream_inf_list          *next;
 } stream_inf_list_t;
 
+/**
+ * Linked list of iframe stream infs.
+ */
 typedef struct iframe_stream_inf_list {
     iframe_stream_inf_t *data;
     struct iframe_stream_inf_list   *next;
 } iframe_stream_inf_list_t;
 
+/**
+ * Linked list of Media Tags.
+ */
 typedef struct media_list {
     media_t                         *data;
     struct media_list               *next;
 } media_list_t;
 
+/**
+ * Linked list of Map Tags.
+ */
 typedef struct map_list {
     map_t                           *data;
     struct map_list                 *next;
 } map_list_t;
 
+/**
+ * Linked list of Daterange Tags.
+ */
 typedef struct daterange_list {
     daterange_t                     *data;
     struct daterange_list           *next;
 } daterange_list_t;
 
+/**
+ * Master Playlist Structure.
+ */
 typedef struct {
     int                         version;
     char                        *uri;
@@ -332,6 +373,9 @@ typedef struct {
     int                         nb_session_keys;
 } master_t;
 
+/**
+ * Media Playlist Structure.
+ */
 typedef struct {
     int                         version;
     int                         media_sequence;
@@ -364,13 +408,33 @@ typedef struct {
     segment_t                   *last_segment;                  
 } media_playlist_t;
 
+///////////////////////////////////////
+/// Parsing and Writing Functions
+///////////////////////////////////////
+
+/**
+ * Global initialization of the library.
+ * This function or hlsparse_global_init_mem(m,f) must be called prior to any other API.
+ * 
+ * @returns HLS_OK on success.
+ */
 HLSCode hlsparse_global_init(void);
+
+/**
+ * Global initialization of the library with a custom memory allocator.
+ * This function or hlsparse_global_init(void) must be called prior to any other API.
+ * 
+ * @param m user defined malloc callback.
+ * @param f user defined free callback.
+ * @returns HLS_OK on success.
+ */
 HLSCode hlsparse_global_init_mem(hlsparse_malloc_callback m, hlsparse_free_callback f);
 
 /**
  * Initializes a master_t object
  *
  * @param dest The object to initialize
+ * @returns HLS_OK on success.
  */
 HLSCode hlsparse_master_init(master_t *dest);
 
@@ -378,25 +442,32 @@ HLSCode hlsparse_master_init(master_t *dest);
  * Initializes a media_playlist_t object
  *
  * @param dest The object to initialize
+ * @returns HLS_OK on success.
  */
 HLSCode hlsparse_media_playlist_init(media_playlist_t *dest);
 
 /**
  * Cleans up a master_t object freeing any resources.
  * The master_t object itself is not destroyed in the process.
- * Call parse_master_init to reinitialize the master_t after if has been destroyed
+ * Call parse_master_init to reinitialize the master_t after if has been destroyed.
+ * This will free any associated pointers, care must be taken when manipulating or
+ * creating playlists from scratch and attempting to terminate them.
  *
  * @param dest The master_t object to destroy
+ * @returns HLS_OK on success.
  */
 HLSCode hlsparse_master_term(master_t *dest);
 
 /**
  * Cleans up a media_playlist_t object freeing any resources.
  * The media_playlist_t object itself is not destroyed in the process.
- * Call parse_media_playlist_init to reinitialize the meida_playlisy_t after it has
- * been destroyed
+ * Call parse_media_playlist_init to reinitialize the media_playlisy_t after it has
+ * been destroyed.
+ * This will free any associated pointers, care must be taken when manipulating or
+ * creating playlists from scratch and attempting to terminate them.
  *
  * @param dest The media_playlist_t object to destroy
+ * @returns HLS_OK on success.
  */
 HLSCode hlsparse_media_playlist_term(media_playlist_t *dest);
 
@@ -406,6 +477,7 @@ HLSCode hlsparse_media_playlist_term(media_playlist_t *dest);
  * @param src The raw string of data that represents an HLS master playlist
  * @param size The length of src
  * @param dest The master_t to parse the source text into
+ * @returns The number og bytes read.
  */
 int hlsparse_master(const char *src, size_t size, master_t *dest);
 
@@ -415,8 +487,77 @@ int hlsparse_master(const char *src, size_t size, master_t *dest);
  * @param src The raw string of data that represents an HLS media playlist
  * @param size The length of src
  * @param dest The media_playlist_t to parse the source text into
+ * @returns The number og bytes read.
  */
 int hlsparse_media_playlist(const char *src, size_t size, media_playlist_t *dest);
+
+/**
+ * writes an HLS master playlist from a master_t structure.
+ * 
+ * @param dest A NULL pointer which will be assiged to the output UTF-8 string.
+ * @param dest_size The size of the string assigned to 'dest'.
+ * @param master The master playlist structure used to write a playlist from.
+ * @returns HLS_OK on success.
+ */
+HLSCode hlswrite_master(char **dest, int *dest_size, master_t *master);
+
+/**
+ * writes an HLS media playlist from a media_playlist_t structure.
+ * 
+ * @param dest A NULL pointer which will be assiged to the output UTF-8 string.
+ * @param dest_size The size of the string assigned to 'dest'.
+ * @param master The media playlist structure used to write a playlist from.
+ * @returns HLS_OK on success.
+ */
+HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist);
+
+///////////////////////////////////////////////////////////////
+/// Struct initialization and termination util Functions
+///////////////////////////////////////////////////////////////
+
+void hlsparse_byte_range_init(byte_range_t *byte_range);
+void hlsparse_ext_inf_init(ext_inf_t *ext_inf);
+void hlsparse_resolution_init(resolution_t *resolution);
+void hlsparse_iframe_stream_inf_init(iframe_stream_inf_t *stream_inf);
+void hlsparse_stream_inf_init(stream_inf_t *stream_inf);
+void hlsparse_key_init(hls_key_t *key);
+void hlsparse_map_init(map_t *map);
+void hlsparse_daterange_init(daterange_t *daterange);
+void hlsparse_media_init(media_t *media);
+void hlsparse_segment_init(segment_t *segment);
+void hlsparse_session_data_init(session_data_t *session_data);
+void hlsparse_start_init(start_t *start);
+void hlsparse_segment_list_init(segment_list_t *list);
+void hlsparse_session_data_list_init(session_data_list_t *list);
+void hlsparse_key_list_init(key_list_t *list);
+void hlsparse_stream_inf_list_init(stream_inf_list_t *list);
+void hlsparse_iframe_stream_inf_list_init(iframe_stream_inf_list_t *list);
+void hlsparse_media_list_init(media_list_t *list);
+void hlsparse_map_list_init(map_list_t *list);
+void hlsparse_string_list_init(string_list_t *list);
+void hlsparse_daterange_list_init(daterange_list_t *list);
+void hlsparse_param_list_init(param_list_t *list);
+
+void hlsparse_param_term(char ***params, int size);
+void hlsparse_ext_inf_term(ext_inf_t *ext_inf);
+void hlsparse_iframe_stream_inf_term(iframe_stream_inf_t *stream_inf);
+void hlsparse_stream_inf_term(stream_inf_t *stream_inf);
+void hlsparse_key_term(hls_key_t *key);
+void hlsparse_map_term(map_t *map);
+void hlsparse_daterange_term(daterange_t *daterange);
+void hlsparse_media_term(media_t *media);
+void hlsparse_segment_term(segment_t *segment);
+void hlsparse_session_data_term(session_data_t *session_data);
+void hlsparse_segment_list_term(segment_list_t *list);
+void hlsparse_session_data_list_term(session_data_list_t *list);
+void hlsparse_key_list_term(key_list_t *list);
+void hlsparse_media_list_term(media_list_t *list);
+void hlsparse_map_list_term(map_list_t *list);
+void hlsparse_daterange_list_term(daterange_list_t *list);
+void hlsparse_iframe_stream_inf_list_term(iframe_stream_inf_list_t *list);
+void hlsparse_stream_inf_list_term(stream_inf_list_t *list);
+void hlsparse_string_list_term(string_list_t *list);
+void hlsparse_param_list_term(param_list_t *list);
 
 #ifdef __cplusplus
 }
