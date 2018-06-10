@@ -42,7 +42,7 @@
 #define ADD_PARAM_STR_OPTL(param_name, value) \
     if(value) { latest = pgprintf(latest, ",%s=\"%s\"", param_name, value); }
 #define ADD_PARAM_HEX_OPTL(param_name, value, count) \
-    if(value) { latest = pgprintf(latest, ",%s=0x", param_name); int l=0; while(l<count) { latest = pgprintf(latest, "%02X", value[l]); ++l; } }
+    if(value) { latest = pgprintf(latest, ",%s=0x", param_name); int l=0; while(l<count) { latest = pgprintf(latest, "%02X", (uint8_t)value[l]); ++l; } }
 #define ADD_PARAM_BOOL_YES_ONLY(param_name, value) \
     if(value == HLS_TRUE) { latest = pgprintf(latest, ",%s=%s", param_name, YES); }
 #define ADD_PARAM_RES_OPTL(param_name, value) \
@@ -265,7 +265,22 @@ HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist)
         }else{
             latest = pgprintf(latest, "#%s:%.3f,\n", EXTINF, seg->data->duration);
         }
-        ADD_URI(seg->data->uri);
+        // see if we can create a relative url
+        if(playlist->uri) {
+            const char *rel = playlist->uri;
+            const char *ptr_pl = playlist->uri;
+            const char *ptr_seg = seg->data->uri;
+            while(*ptr_seg == *ptr_pl) {
+                if(*ptr_seg == '/') {
+                    rel = ptr_seg + 1;
+                }
+                ptr_seg++;
+                ptr_pl++;
+            }
+            ADD_URI(rel);
+        }else{
+            ADD_URI(seg->data->uri);
+        }
         seg = seg->next;
     }
 
