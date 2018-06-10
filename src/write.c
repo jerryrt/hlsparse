@@ -70,7 +70,9 @@ HLSCode hlswrite_master(char **dest, int *dest_size, master_t *master)
     page_t *latest = root;
     
     ADD_TAG(EXTM3U);
-    ADD_TAG_INT(EXTXVERSION, master->version);
+    if(master->version > 0) {
+        ADD_TAG_INT(EXTXVERSION, master->version);
+    }
     ADD_TAG_IF_TRUE(EXTXINDEPENDENTSEGMENTS, master->independent_segments);
     ADD_XSTART_TAG_OPTL(master->start);
 
@@ -128,7 +130,22 @@ HLSCode hlswrite_master(char **dest, int *dest_size, master_t *master)
         ADD_PARAM_STR_OPTL(SUBTITLES, inf->subtitles);
         ADD_PARAM_STR_OPTL(CLOSEDCAPTIONS, inf->closed_captions);
         END_TAG();
-        ADD_URI(inf->uri);
+        // see if we can create a relative url
+        if(master->uri) {
+            const char *rel = master->uri;
+            const char *ptr_pl = master->uri;
+            const char *ptr_seg = inf->uri;
+            while(*ptr_seg == *ptr_pl) {
+                if(*ptr_seg == '/') {
+                    rel = ptr_seg + 1;
+                }
+                ptr_seg++;
+                ptr_pl++;
+            }
+            ADD_URI(rel);
+        }else{
+            ADD_URI(inf->uri);
+        }
         stream_inf_list = stream_inf_list->next;
     }
 
