@@ -183,7 +183,7 @@ HLSCode hlswrite_master(char **dest, int *dest_size, master_t *master)
 
 HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist) 
 {
-    if(!dest || dest_size <= 0 || !playlist) {
+    if(!dest || !dest_size || !playlist) {
         return HLS_ERROR;
     }
 
@@ -241,6 +241,12 @@ HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist)
             }
         }
 
+        string_list_t *ctags = &seg->data->custom_tags;
+        while(ctags && ctags->data) {
+            ADD_TAG(ctags->data);
+            ctags = ctags->next;
+        }
+
         if(seg->data->discontinuity == HLS_TRUE) {
             ADD_TAG(EXTXDISCONTINUITY);
             char buf[30];
@@ -286,10 +292,11 @@ page_t* write_to_page(page_t *page, const char *buffer, int size)
 page_t* create_page(page_t *page)
 {
     page_t *new_page = (page_t*)hls_malloc(sizeof(page_t));
-    memset(new_page, 0, sizeof(new_page));
+    memset(new_page, 0, sizeof(page_t));
     new_page->buffer = (char*)hls_malloc(PAGE_SIZE);
     new_page->size = PAGE_SIZE;
     new_page->cur = new_page->buffer;
+    new_page->next = NULL;
 
     if(page) {
         page->next = new_page;
@@ -314,15 +321,14 @@ page_t *pgprintf(page_t *page, const char *format, ...)
 void page_to_str(page_t *page, char **dest, int *dest_size)
 {
     int full_size = 0;
-    // write a NULL terminator
-    const page_t *pg_ptr = write_to_page(page, "\00", 1);
-
+    const page_t *pg_ptr = page;
+    
     while(pg_ptr) {
         full_size += pg_ptr->cur - pg_ptr->buffer;
         pg_ptr = pg_ptr->next;
     }
 
-    char *output = (char*) hls_malloc(full_size);
+    char *output = (char*) hls_malloc(full_size+1);
     char *ptr = output;
     pg_ptr = page;
     while(pg_ptr) {
@@ -331,6 +337,7 @@ void page_to_str(page_t *page, char **dest, int *dest_size)
         ptr += pg_size;
         pg_ptr = pg_ptr->next;
     }
+    *ptr = '\0'; // NULL Pointer
 
     *dest = output;
     *dest_size = full_size;
