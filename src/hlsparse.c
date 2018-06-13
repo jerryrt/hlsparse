@@ -88,8 +88,10 @@ int hlsparse_master(const char *src, size_t size, master_t *dest)
     // make sure we have some data
     if (src && *src != '\0' && src < &src[size]) {
         // go through each line parsing the tags
+        const char *end = &src[size];
         const char *pt = src;
-        while (*pt != '\0') {
+        // loop until we find a null terminator or hit the end of the data
+        while (*pt != '\0' && pt < end) {
             if (*pt == '#') {
                 ++pt;
                 pt += parse_master_tag(pt, size - (pt - src), dest);
