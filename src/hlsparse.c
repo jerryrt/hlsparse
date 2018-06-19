@@ -125,7 +125,12 @@ int hlsparse_media_playlist(const char *src, size_t size, media_playlist_t *dest
             if(*pt == '#') {
                 ++pt;
                 pt += parse_media_playlist_tag(pt, size - (pt - src), dest);
-            } else {
+            } else if(*pt == '\n' && pt[1] != '#') {
+                ++pt;
+                if(dest->last_segment) {
+                    pt += parse_segment_uri(pt, size - (pt - src), dest);
+                }
+            }else{
                 ++pt;
             }
         }

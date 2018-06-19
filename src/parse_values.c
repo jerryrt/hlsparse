@@ -115,12 +115,13 @@ int parse_str_to_float(const char *src, float *dest, size_t size)
     // parse the decimal point
     if(pt < &src[size] && *pt == '.') {
         ++pt;
-        float mod = 0.1f;
+        float divis = 1.f;
         while(*pt >= '0' && *pt <= '9' && pt < &src[size]) {
-            fraction = fraction + ((*pt - '0') * mod);
-            mod *= 0.1f;
+            fraction = (fraction * 10.f) + (float)(*pt - '0');
+            divis *= 10.f;
             ++pt;
         }
+        fraction = fraction / divis;
     }
 
     // set the value

@@ -103,6 +103,7 @@ int parse_media(const char *src, size_t size, media_t *media);
 int parse_media_tag(const char *src, size_t size, media_t *media);
 int parse_segment(const char *src, size_t size, segment_t *segment);
 int parse_segment_tag(const char *src, size_t size, segment_t *segment);
+int parse_segment_uri(const char *src, size_t size, media_playlist_t *dest);
 int parse_session_data(const char *src, size_t size, session_data_t *session_data);
 int parse_session_data_tag(const char *src, size_t size,session_data_t *session_data);
 int parse_start(const char *src, size_t size, start_t *start);

@@ -271,17 +271,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
         segment_t *segment = hls_malloc(sizeof(segment_t));
         hlsparse_segment_init(segment);
 
-        segment->byte_range.n = dest->next_segment_byterange.n;
-        segment->byte_range.o = dest->next_segment_byterange.o;
-        dest->next_segment_byterange.n = dest->next_segment_byterange.o = 0;
-
         pt += parse_segment(pt, size - (pt - src), segment);
-
-        path_combine(&segment->uri, dest->uri, segment->uri);
-
-        segment->key_index = dest->nb_keys - 1;
-        segment->map_index = dest->nb_maps - 1;
-        segment->daterange_index = dest->nb_dateranges - 1;
 
         segment->sequence_num = dest->next_segment_media_sequence;
         ++(dest->next_segment_media_sequence);
@@ -302,10 +292,6 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
                 segment->pdt_discontinuity = HLS_TRUE;
             }
         }
-
-        segment->discontinuity = dest->next_segment_discontinuity;
-        // reset the discontinuity flag
-        dest->next_segment_discontinuity = HLS_FALSE;
 
         // add the segment to the playlist
         segment_list_t *next = &dest->segments;
@@ -328,11 +314,6 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
 
         // add this segment to the playlists duration
         dest->duration += segment->duration;
-
-        segment->custom_tags.data = dest->custom_tags.data;
-        segment->custom_tags.next = dest->custom_tags.next;
-        dest->custom_tags.data = NULL;
-        dest->custom_tags.next = NULL;
 
     } else if(EQUAL(pt, EXTXKEY)) {
         ++pt;

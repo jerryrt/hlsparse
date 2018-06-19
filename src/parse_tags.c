@@ -1343,27 +1343,62 @@ int parse_segment(const char *src, size_t size, segment_t *dest)
         const char *pt = &src[0];
         int dif;
 
-        // keep parse tags until we get to the uri
-        do {
-            // keep going until we get to the uri
-            while(!(*pt == '\0' || *pt == '\n')) {
-                // skip comma characters in between the attributes
-                if(*pt == ',' || *pt == '=' || *pt == '\r' || *pt == '#') {
-                    ++pt;
-                } else {
-                    dif = parse_segment_tag(pt, size - (pt - src), dest);
-                    pt += dif > 0 ? dif : 1;
-                }
+        while(!(*pt == '\0' || *pt == '\r' || *pt == '\n' || pt >= &src[size])) {
+            // skip comma characters in between the attributes
+            if(*pt == ',' || *pt == '=' || *pt == '\r' || *pt == '#') {
+                ++pt;
+            } else {
+                dif = parse_segment_tag(pt, size - (pt - src), dest);
+                pt += dif > 0 ? dif : 1;
             }
-        } while(*pt == '\n' && *(++pt) == '#');
-
-        // finally parse the next line which is the uri
-        if(dest) {
-            pt += parse_line_to_str(pt, &dest->uri, size - (pt - src));
         }
 
         // return the difference between the 2 data points
         res = pt - src;
+    }
+
+    return res;
+}
+
+/**
+ * Parses an HLS EXT-X-I-FRAME-STREAM-INF tag into the specified object.
+ *
+ * @param src The raw IFrameStreamInf data to parse.
+ * @param size The length of src
+ */
+int parse_segment_uri(const char *src, size_t size, media_playlist_t *dest)
+{
+    int res = 0;
+
+    segment_t *segment = dest->last_segment;
+    // make sure we have some data
+    if(segment && src && src[0] != '\0') {
+        // parse until the end of the line
+        const char *pt = &src[0];
+        pt += parse_line_to_str(pt, &segment->uri, size - (pt - src));
+        // return the difference between the 2 data points
+        res = pt - src;
+
+        if(segment->uri) {
+            path_combine(&segment->uri, dest->uri, segment->uri);
+        }
+
+        segment->byte_range.n = dest->next_segment_byterange.n;
+        segment->byte_range.o = dest->next_segment_byterange.o;
+        dest->next_segment_byterange.n = dest->next_segment_byterange.o = 0;
+
+        segment->key_index = dest->nb_keys - 1;
+        segment->map_index = dest->nb_maps - 1;
+        segment->daterange_index = dest->nb_dateranges - 1;
+
+        segment->custom_tags.data = dest->custom_tags.data;
+        segment->custom_tags.next = dest->custom_tags.next;
+        dest->custom_tags.data = NULL;
+        dest->custom_tags.next = NULL;
+
+        segment->discontinuity = dest->next_segment_discontinuity;
+        // reset the discontinuity flag
+        dest->next_segment_discontinuity = HLS_FALSE;
     }
 
     return res;
