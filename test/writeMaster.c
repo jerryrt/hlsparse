@@ -26,7 +26,7 @@ void write_master_test(void)
     master.version = 4;
     master.independent_segments = HLS_TRUE;
     master.start.time_offset = -2.f;
-    master.start.precise - HLS_FALSE;
+    master.start.precise = HLS_FALSE;
 
     media_t media0;
     hlsparse_media_init(&media0);

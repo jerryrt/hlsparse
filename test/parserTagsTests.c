@@ -770,19 +770,19 @@ void parse_segment_test(void)
     hlsparse_segment_term(&seg);
     hlsparse_segment_init(&seg);
     res = parse_segment(src2, strlen(src2), &seg);
-    CU_ASSERT_EQUAL(res, strlen(src2));
+    CU_ASSERT_EQUAL(res, 15);
     CU_ASSERT_EQUAL(seg.duration, 10.123f);
     CU_ASSERT_EQUAL(seg.title, NULL);
-    CU_ASSERT_EQUAL(strcmp(seg.uri, "seg001.ts"), 0);
+    CU_ASSERT_EQUAL(seg.uri, NULL);
 
     const char *src3 = "#EXTINF:4,bar\n/seg01.ts";
     hlsparse_segment_term(&seg);
     hlsparse_segment_init(&seg);
     res = parse_segment(src3, strlen(src3), &seg);
-    CU_ASSERT_EQUAL(res, strlen(src3));
+    CU_ASSERT_EQUAL(res, 13);
     CU_ASSERT_EQUAL(seg.duration, 4.f);
     CU_ASSERT_EQUAL(strcmp(seg.title, "bar"), 0);
-    CU_ASSERT_EQUAL(strcmp(seg.uri, "/seg01.ts"), 0);
+    CU_ASSERT_EQUAL(seg.uri, NULL);
 }
 
 void parse_session_data_test(void)
