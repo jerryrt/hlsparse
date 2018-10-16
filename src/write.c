@@ -132,7 +132,7 @@ HLSCode hlswrite_master(char **dest, int *dest_size, master_t *master)
         END_TAG();
         // see if we can create a relative url
         if(master->uri) {
-            const char *rel = master->uri;
+            const char *rel = inf->uri;
             const char *ptr_pl = master->uri;
             const char *ptr_seg = inf->uri;
             while(*ptr_seg == *ptr_pl) {
@@ -284,7 +284,7 @@ HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist)
         }
         // see if we can create a relative url
         if(playlist->uri) {
-            const char *rel = playlist->uri;
+            const char *rel = seg->data->uri;
             const char *ptr_pl = playlist->uri;
             const char *ptr_seg = seg->data->uri;
             while(*ptr_seg == *ptr_pl) {
