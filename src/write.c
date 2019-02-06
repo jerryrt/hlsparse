@@ -231,6 +231,13 @@ HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist)
 
     for(i=0; i<playlist->nb_segments; ++i)
     {
+        // write custom tags first
+        string_list_t *ctags = &seg->data->custom_tags;
+        while(ctags && ctags->data) {
+            ADD_TAG(ctags->data);
+            ctags = ctags->next;
+        }
+        
         // new Key index?
         if(seg->data->key_index > key_idx) {
             key_idx = seg->data->key_index;
@@ -256,12 +263,6 @@ HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist)
                 ADD_PARAM_STR_OPTL(KEYFORMATVERSIONS, key->key_format_versions);
                 END_TAG();
             }
-        }
-
-        string_list_t *ctags = &seg->data->custom_tags;
-        while(ctags && ctags->data) {
-            ADD_TAG(ctags->data);
-            ctags = ctags->next;
         }
 
         if(seg->data->discontinuity == HLS_TRUE) {
