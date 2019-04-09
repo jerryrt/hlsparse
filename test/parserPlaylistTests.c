@@ -76,6 +76,8 @@ void playlist_parse_test(void)
     CU_ASSERT_EQUAL(master.custom_tags.data, NULL);
     CU_ASSERT_EQUAL(master.nb_session_keys, 1);
     CU_ASSERT_EQUAL(master.session_keys.next, NULL);
+    CU_ASSERT_EQUAL(master.nb_stream_infs, 2);
+    CU_ASSERT_EQUAL(master.nb_iframe_stream_infs, 1);
 
     hls_key_t *key = master.session_keys.data;
     CU_ASSERT_EQUAL(key->method, KEY_METHOD_AES128);

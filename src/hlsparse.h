@@ -367,7 +367,9 @@ typedef struct {
     session_data_list_t         session_data;
     media_list_t                media;
     stream_inf_list_t           stream_infs;
+    int                         nb_stream_infs;
     iframe_stream_inf_list_t    iframe_stream_infs; 
+    int                         nb_iframe_stream_infs;
     string_list_t               custom_tags;
     key_list_t                  session_keys;
     int                         nb_session_keys;

@@ -90,6 +90,8 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
             next = next->next;
         };
 
+        dest->nb_stream_infs++;
+
     } else if (EQUAL(pt, EXTXIFRAMESTREAMINF)) {
 
         iframe_stream_inf_t *stream_inf = hls_malloc(sizeof(iframe_stream_inf_t));
@@ -113,6 +115,8 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
             }
             next = next->next;
         };
+
+        dest->nb_iframe_stream_infs++;
 
     } else if (EQUAL(pt, EXTXSESSIONDATA)) {
 
