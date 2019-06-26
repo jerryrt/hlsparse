@@ -248,6 +248,133 @@ variant0/segment9.ts\n";
     CU_ASSERT_EQUAL(strcmp(media_output, out), 0);
 }
 
+void write_media_test2(void)
+{
+    media_playlist_t media;
+    hlsparse_media_playlist_init(&media);
+
+    media.m3u = HLS_TRUE;
+    media.version = 3;
+    media.target_duration = 6;
+    media.media_sequence = 1;
+    media.discontinuity_sequence = 0;
+    media.playlist_type = PLAYLIST_TYPE_VOD;
+    media.iframes_only = HLS_FALSE;
+    media.end_list = HLS_TRUE;
+
+    media.nb_segments = 5;
+    segment_t segs[5];
+    hls_key_t keys[3];
+    segment_list_t seg_lists[5];
+    key_list_t key_lists[2];
+    timestamp_t pdt = 1534023759900;
+
+    hlsparse_key_init(&keys[0]);
+    hlsparse_key_init(&keys[1]);
+    hlsparse_key_init(&keys[2]);
+
+    media.keys.data = &keys[0];
+    media.keys.next = &key_lists[0];
+    key_lists[0].data = &keys[1];
+    key_lists[0].next = &key_lists[1];
+    key_lists[1].data = &keys[2];
+    key_lists[1].next = NULL;
+    keys[0].method = KEY_METHOD_AES128;
+    keys[0].iv = (char[]){0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89};
+    keys[0].uri = "https://key-service.com/key?id=123";
+    keys[1].method = KEY_METHOD_AES128;
+    keys[1].iv = (char[]){0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0x01, 0x23, 0x45, 0x67, 0x89, 0xAB};
+    keys[1].uri = "https://key-service.com/key?id=124";
+    keys[2].method = KEY_METHOD_NONE;
+
+    string_list_t tags[5];
+    tags[0].data = "EXT-X-ASSET-START:id=987,pop=";
+    tags[0].next = NULL;
+    tags[1].data = "EXT-X-CUE-OUT:_params=\"abc=d&efg=MIDROLL&pop=1\"";
+    tags[1].next = &tags[2];
+    tags[2].data = "EXT-X-CUE-IN";
+    tags[2].next = NULL;
+    tags[3].data = "EXT-X-CUE-OUT:_fw_params=\"abc=a&efg=POSTROLL&pop=4\"";
+    tags[3].next = &tags[4];
+    tags[4].data = "EXT-X-CUE-IN";
+    tags[4].next = NULL;
+
+    segment_list_t *seg_list = &media.segments;
+    int i;
+    for(i=0; i<media.nb_segments; ++i) {
+        segment_t *seg = &segs[i];
+        hlsparse_segment_init(seg);
+
+        seg->pdt = pdt;
+
+        if(i == 0) {
+            pdt += 0033LL;
+            seg->duration = 0.033f;
+            seg->key_index = 0;
+            seg->custom_tags = tags[0];
+        }else if(i == 1){
+            pdt += 4972LL;
+            seg->duration = 4.972f;
+            seg->key_index = 1;
+            seg->custom_tags = tags[1];
+        }else if(i == 2){
+            pdt += 5005LL;
+            seg->duration = 5.005f;
+            seg->key_index = 1;
+        }else if(i == 3){
+            pdt += 4605LL;
+            seg->duration = 4.605f;
+            seg->key_index = 1;
+        }else if(i == 4){
+            seg->key_index = 2;
+            seg->custom_tags = tags[3];
+        }
+
+        if(i < 4) {
+            char uri[50];
+            snprintf(uri, 50, "ADAP/00060/1001_ADAP_0000%d.ts", i+1);
+            seg->uri = strdup(uri);
+        }
+
+        pdt += (timestamp_t)seg->duration;
+        seg_list->data = seg;
+        if(i < 5) {
+            seg_list->next = &seg_lists[i];
+            seg_list = seg_list->next;
+        }
+    }
+
+    char *out = NULL;
+    int size = 0;
+
+    HLSCode res = hlswrite_media(&out, &size, &media);
+
+    const char *media_output = "#EXTM3U\n\
+#EXT-X-VERSION:3\n\
+#EXT-X-TARGETDURATION:6\n\
+#EXT-X-MEDIA-SEQUENCE:1\n\
+#EXT-X-DISCONTINUITY-SEQUENCE:0\n\
+#EXT-X-PLAYLIST-TYPE:VOD\n\
+#EXT-X-PROGRAM-DATE-TIME:2018-08-11T21:42:39.900Z\n\
+#EXT-X-ASSET-START:id=987,pop=\n\
+#EXT-X-KEY:METHOD=AES-128,URI=\"https://key-service.com/key?id=123\",IV=0xABCDEF0123456789ABCDEF0123456789\n\
+#EXTINF:0.033,\n\
+ADAP/00060/1001_ADAP_00001.ts\n\
+#EXT-X-CUE-OUT:_params=\"abc=d&efg=MIDROLL&pop=1\"\n\
+#EXT-X-CUE-IN\n\
+#EXT-X-KEY:METHOD=AES-128,URI=\"https://key-service.com/key?id=124\",IV=0xCDEF0123456789ABCDEF0123456789AB\n\
+#EXTINF:4.972,\n\
+ADAP/00060/1001_ADAP_00002.ts\n\
+#EXTINF:5.005,\n\
+ADAP/00060/1001_ADAP_00003.ts\n\
+#EXTINF:4.605,\n\
+ADAP/00060/1001_ADAP_00004.ts\n\
+#EXT-X-CUE-OUT:_fw_params=\"abc=a&efg=POSTROLL&pop=4\"\n\
+#EXT-X-CUE-IN\n\
+#EXT-X-ENDLIST\n";
+
+    CU_ASSERT_EQUAL(strcmp(media_output, out), 0);
+}
 void setup()
 {
     hlsparse_global_init();
@@ -255,4 +382,5 @@ void setup()
     suite("parse", init, clean);
     test("write_master", write_master_test);
     test("write_media", write_media_test);
+    test("write_media", write_media_test2);
 }

@@ -1,5 +1,6 @@
 #include "parse.h"
 #include <memory.h>
+#include <stdio.h>
 
 hlsparse_malloc_callback hls_malloc = (hlsparse_malloc_callback) malloc;
 hlsparse_free_callback hls_free = (hlsparse_free_callback) free;
@@ -136,6 +137,50 @@ int hlsparse_media_playlist(const char *src, size_t size, media_playlist_t *dest
         }
 
         res = pt - src;
+    }
+
+    // custom tags can exist after the last segment for things like pre-roll ad insertion
+    // create a zero length segment and attach these custom tags to that segment
+    string_list_t *tag_media = &(dest->custom_tags);
+    if(tag_media && tag_media->data)
+    {
+        // create a new segment
+        segment_t *segment = hls_malloc(sizeof(segment_t));
+        hlsparse_segment_init(segment);
+
+        // add the new segment to the playlist
+        segment_list_t *next = &dest->segments;
+        while(next) {
+            if(!next->data) {
+                next->data = segment;
+                break;
+            } else if(!next->next) {
+                next->next = hls_malloc(sizeof(segment_list_t));
+                hlsparse_segment_list_init(next->next);
+                next->next->data = segment;
+                break;
+            }
+            next = next->next;
+        };
+
+        dest->last_segment = segment;
+        ++(dest->nb_segments);
+
+        segment->key_index = dest->nb_keys - 1;
+        segment->map_index = dest->nb_maps - 1;
+        segment->daterange_index = dest->nb_dateranges - 1;
+
+        segment->pdt = segment->pdt_end = dest->next_segment_pdt;
+        segment->sequence_num = dest->next_segment_media_sequence;
+
+        segment->custom_tags.data = dest->custom_tags.data;
+        segment->custom_tags.next = dest->custom_tags.next;
+        dest->custom_tags.data = NULL;
+        dest->custom_tags.next = NULL;
+
+        segment->discontinuity = dest->next_segment_discontinuity;
+        // reset the discontinuity flag
+        dest->next_segment_discontinuity = HLS_FALSE;
     }
 
     return res;

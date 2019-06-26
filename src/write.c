@@ -260,68 +260,75 @@ HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist)
 
     for(i=0; i<playlist->nb_segments; ++i)
     {
-        // write custom tags first
+        // write custom tags first even if the segment uri isn't available
+        // because we could have custom tags indicating actions here e.g. ad post-roll injection
         string_list_t *ctags = &seg->data->custom_tags;
         while(ctags && ctags->data) {
             ADD_TAG(ctags->data);
             ctags = ctags->next;
         }
-        
-        // new Key index?
-        if(seg->data->key_index > key_idx) {
-            key_idx = seg->data->key_index;
-            // find the key
-            int j=0;
-            key_list_t *key_list = &playlist->keys;
-            hls_key_t *key = NULL;  
-            while(key_list && key_list->data && j++ <= key_idx) {
-                key = key_list->data;
-                key_list = key_list->next;
+
+        // only write the other tags if the uri exists
+        if(seg->data->uri) {
+            
+            // new Key index?
+            if(seg->data->key_index > key_idx) {
+                key_idx = seg->data->key_index;
+                // find the key
+                int j=0;
+                key_list_t *key_list = &playlist->keys;
+                hls_key_t *key = NULL;  
+                while(key_list && key_list->data && j++ <= key_idx) {
+                    key = key_list->data;
+                    key_list = key_list->next;
+                }
+
+                // add key tag
+                if(key) {
+                    switch(key->method) {
+                        case KEY_METHOD_NONE: START_TAG_ENUM(EXTXKEY, METHOD, NONE); break;
+                        case KEY_METHOD_AES128: START_TAG_ENUM(EXTXKEY, METHOD, AES128); break;
+                        case KEY_METHOD_SAMPLEAES: START_TAG_ENUM(EXTXKEY, METHOD, SAMPLEAES); break;
+                    }
+                    if(playlist->uri) {
+                        const char *uri = find_relative_path(key->uri, playlist->uri);
+                        ADD_PARAM_STR_OPTL(URI, uri);
+                    }else{
+                        ADD_PARAM_STR_OPTL(URI, key->uri);
+                    }
+                    ADD_PARAM_HEX_OPTL(KEY_IV, key->iv, 16);
+                    ADD_PARAM_STR_OPTL(KEYFORMAT, key->key_format);
+                    ADD_PARAM_STR_OPTL(KEYFORMATVERSIONS, key->key_format_versions);
+                    END_TAG();
+                }
             }
 
-            // add key tag
-            if(key) {
-                switch(key->method) {
-                    case KEY_METHOD_NONE: START_TAG_ENUM(EXTXKEY, METHOD, NONE); break;
-                    case KEY_METHOD_AES128: START_TAG_ENUM(EXTXKEY, METHOD, AES128); break;
-                    case KEY_METHOD_SAMPLEAES: START_TAG_ENUM(EXTXKEY, METHOD, SAMPLEAES); break;
-                }
-                if(playlist->uri) {
-                    const char *uri = find_relative_path(key->uri, playlist->uri);
-                    ADD_PARAM_STR_OPTL(URI, uri);
+            if(seg->data->discontinuity == HLS_TRUE) {
+                ADD_TAG(EXTXDISCONTINUITY);
+                char buf[30];
+                timestamp_to_iso_date(seg->data->pdt, buf, 30);
+                ADD_TAG_ENUM(EXTXPROGRAMDATETIME, buf);
+            }
+
+            if(seg->data->byte_range.n > 0) {
+                if(seg->data->byte_range.o != 0) {
+                    latest = pgprintf(latest, "#%s:%d@%d\n", EXTXBYTERANGE, seg->data->byte_range.n, seg->data->byte_range.o);
                 }else{
-                    ADD_PARAM_STR_OPTL(URI, key->uri);
+                    latest = pgprintf(latest, "#%s:%d\n", EXTXBYTERANGE, seg->data->byte_range.n);
                 }
-                ADD_PARAM_HEX_OPTL(KEY_IV, key->iv, 16);
-                ADD_PARAM_STR_OPTL(KEYFORMAT, key->key_format);
-                ADD_PARAM_STR_OPTL(KEYFORMATVERSIONS, key->key_format_versions);
-                END_TAG();
             }
-        }
-
-        if(seg->data->discontinuity == HLS_TRUE) {
-            ADD_TAG(EXTXDISCONTINUITY);
-            char buf[30];
-            timestamp_to_iso_date(seg->data->pdt, buf, 30);
-            ADD_TAG_ENUM(EXTXPROGRAMDATETIME, buf);
-        }
-        if(seg->data->byte_range.n > 0) {
-            if(seg->data->byte_range.o != 0) {
-                latest = pgprintf(latest, "#%s:%d@%d\n", EXTXBYTERANGE, seg->data->byte_range.n, seg->data->byte_range.o);
+        
+            if(seg->data->title) {
+                latest = pgprintf(latest, "#%s:%.3f,%s\n", EXTINF, seg->data->duration, seg->data->title);
             }else{
-                latest = pgprintf(latest, "#%s:%d\n", EXTXBYTERANGE, seg->data->byte_range.n);
+                latest = pgprintf(latest, "#%s:%.3f,\n", EXTINF, seg->data->duration);
             }
-        }
-        if(seg->data->title) {
-            latest = pgprintf(latest, "#%s:%.3f,%s\n", EXTINF, seg->data->duration, seg->data->title);
-        }else{
-            latest = pgprintf(latest, "#%s:%.3f,\n", EXTINF, seg->data->duration);
-        }
-        if(playlist->uri) {
-            const char *uri = find_relative_path(seg->data->uri, playlist->uri);
-            ADD_URI(uri);
-        }else{
-            ADD_URI(seg->data->uri);
+            if(playlist->uri) {
+                const char *uri = find_relative_path(seg->data->uri, playlist->uri);
+                ADD_URI(uri);
+            }else{
+                ADD_URI(seg->data->uri);
+            }
         }
         seg = seg->next;
     }

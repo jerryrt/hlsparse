@@ -305,7 +305,7 @@ int parse_media_playlist_tag(const char *src, size_t size, media_playlist_t *des
                 next->data = segment;
                 break;
             } else if(!next->next) {
-                next->next = hls_malloc(sizeof(segment_t));
+                next->next = hls_malloc(sizeof(segment_list_t));
                 hlsparse_segment_list_init(next->next);
                 next->next->data = segment;
                 break;

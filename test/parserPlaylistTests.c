@@ -546,6 +546,156 @@ void media_playlist_parse_test2(void)
 
     hlsparse_media_playlist_term(&playlist);
 }
+
+void media_playlist_parse_test3(void)
+{
+    media_playlist_t playlist;
+    hlsparse_media_playlist_init(&playlist);
+
+    const char *src = "#EXTM3U\n\
+#EXT-X-VERSION:3\n\
+#EXT-X-TARGETDURATION:6\n\
+#EXT-X-MEDIA-SEQUENCE:1\n\
+#EXT-X-PLAYLIST-TYPE:VOD\n\
+#EXT-X-PROGRAM-DATE-TIME:2018-08-11T21:42:39.900Z\n\
+#EXT-X-ASSET-START:id=987,pop=\n\
+#EXT-X-KEY:METHOD=AES-128,URI=\"https://key-service.com/key?id=123\",IV=0x3CEA3CC17B919213B8E7CFB5D10D4CAE\n\
+#EXTINF:0.033,\n\
+ADAP/00060/1001_ADAP_00001.ts\n\
+#EXT-X-KEY:METHOD=NONE\n\
+#EXT-X-CUE-OUT:_params=\"abc=d&efg=MIDROLL&pop=1\"\n\
+#EXT-X-CUE-IN\n\
+#EXT-X-KEY:METHOD=AES-128,URI=\"https://key-service.com/key?id=124\",IV=0x3CEA3CC17B919213B8E7CFB5D10D4CAF\n\
+#EXTINF:4.972,\n\
+ADAP/00060/1001_ADAP_00002.ts\n\
+#EXTINF:5.005,\n\
+ADAP/00060/1001_ADAP_00003.ts\n\
+#EXTINF:4.605,\n\
+ADAP/00060/1001_ADAP_00004.ts\n\
+#EXT-X-KEY:METHOD=NONE\n\
+#EXT-X-CUE-OUT:_fw_params=\"abc=a&efg=POSTROLL&pop=4\"\n\
+#EXT-X-CUE-IN\n\
+#EXT-X-ENDLIST\n";
+
+    int res = hlsparse_media_playlist(src, strlen(src), &playlist);
+    CU_ASSERT_EQUAL(res, strlen(src))
+    CU_ASSERT_EQUAL(playlist.m3u, HLS_TRUE);
+    CU_ASSERT_EQUAL(playlist.target_duration, 6);
+    CU_ASSERT_EQUAL(playlist.media_sequence, 1);
+    CU_ASSERT_EQUAL(playlist.discontinuity_sequence, 0);
+    CU_ASSERT_EQUAL(playlist.playlist_type, PLAYLIST_TYPE_VOD);
+    CU_ASSERT_EQUAL(playlist.independent_segments, HLS_FALSE);
+    CU_ASSERT_EQUAL(playlist.iframes_only, HLS_FALSE);
+    CU_ASSERT_EQUAL(playlist.start.time_offset, 0.f);
+    CU_ASSERT_EQUAL(playlist.start.precise, HLS_FALSE);
+    CU_ASSERT_EQUAL(playlist.nb_segments, 5);
+    CU_ASSERT_EQUAL(playlist.nb_maps, 0);
+    CU_ASSERT_EQUAL(playlist.nb_dateranges, 0);
+    CU_ASSERT_EQUAL(playlist.end_list, HLS_TRUE);
+
+    segment_list_t *seg = &playlist.segments;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "ADAP/00060/1001_ADAP_00001.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 0);
+    CU_ASSERT_EQUAL(seg->data->key_index, 0);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, -1);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1534023759900);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1534023759933);
+    CU_ASSERT_EQUAL(seg->data->duration, 0.033f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_NOT_EQUAL(seg->data->custom_tags.data, NULL);
+    assert_string_equal(seg->data->custom_tags.data, "EXT-X-ASSET-START:id=987,pop=", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next, NULL);
+    
+    seg = seg->next;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "ADAP/00060/1001_ADAP_00002.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 1);
+    CU_ASSERT_EQUAL(seg->data->key_index, 2);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, -1);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1534023759933);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1534023764905);
+    CU_ASSERT_EQUAL(seg->data->duration, 4.972f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_NOT_EQUAL(seg->data->custom_tags.data, NULL);
+    assert_string_equal(seg->data->custom_tags.data, "EXT-X-CUE-OUT:_params=\"abc=d&efg=MIDROLL&pop=1\"", __func__, __LINE__);
+    CU_ASSERT_NOT_EQUAL(seg->data->custom_tags.next, NULL);
+    assert_string_equal(seg->data->custom_tags.next->data, "EXT-X-CUE-IN", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next->next, NULL);
+
+    seg = seg->next;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "ADAP/00060/1001_ADAP_00003.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 2);
+    CU_ASSERT_EQUAL(seg->data->key_index, 2);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, -1);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1534023764905);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1534023769910);
+    CU_ASSERT_EQUAL(seg->data->duration, 5.005f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.data, NULL);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next, NULL);
+
+    seg = seg->next;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    assert_string_equal(seg->data->uri, "ADAP/00060/1001_ADAP_00004.ts", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 3);
+    CU_ASSERT_EQUAL(seg->data->key_index, 2);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, -1);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1534023769910);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1534023774515);
+    CU_ASSERT_EQUAL(seg->data->duration, 4.605f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.data, NULL);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next, NULL);
+
+    seg = seg->next;
+    CU_ASSERT_NOT_EQUAL(seg->data, NULL);
+    CU_ASSERT_EQUAL(seg->data->uri, NULL);
+    CU_ASSERT_EQUAL(seg->data->sequence_num, 4);
+    CU_ASSERT_EQUAL(seg->data->key_index, 3);
+    CU_ASSERT_EQUAL(seg->data->map_index, -1);
+    CU_ASSERT_EQUAL(seg->data->daterange_index, -1);
+    CU_ASSERT_EQUAL(seg->data->title, NULL);
+    CU_ASSERT_EQUAL(seg->data->discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt_discontinuity, HLS_FALSE);
+    CU_ASSERT_EQUAL(seg->data->pdt, 1534023774515);
+    CU_ASSERT_EQUAL(seg->data->pdt_end, 1534023774515);
+    CU_ASSERT_EQUAL(seg->data->duration, 0.f);
+    CU_ASSERT_EQUAL(seg->data->byte_range.n, 0);
+    CU_ASSERT_EQUAL(seg->data->byte_range.o, 0);
+    CU_ASSERT_NOT_EQUAL(seg->data->custom_tags.data, NULL);
+    assert_string_equal(seg->data->custom_tags.data, "EXT-X-CUE-OUT:_fw_params=\"abc=a&efg=POSTROLL&pop=4\"", __func__, __LINE__);
+    CU_ASSERT_NOT_EQUAL(seg->data->custom_tags.next, NULL);
+    assert_string_equal(seg->data->custom_tags.next->data, "EXT-X-CUE-IN", __func__, __LINE__);
+    CU_ASSERT_EQUAL(seg->data->custom_tags.next->next, NULL);
+
+    seg = seg->next;
+    CU_ASSERT_EQUAL(seg, NULL);
+
+    hlsparse_media_playlist_term(&playlist);
+}
 void setup(void)
 {
     hlsparse_global_init();
@@ -558,5 +708,6 @@ void setup(void)
     test("media_playlist_term", media_playlist_term_test);
     test("media_playlist_parse", media_playlist_parse_test);
     test("media_playlist_parse2", media_playlist_parse_test2);
+    test("media_playlist_parse3", media_playlist_parse_test3);
 }
 
