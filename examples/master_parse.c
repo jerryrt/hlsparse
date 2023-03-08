@@ -176,6 +176,46 @@ int find_media_of(const master_t *m3u8_obj, const media_list_t **out, const char
     return -1;
 }
 
+// "mlhls://localhost/itag/234/mediadata.m3u8" => "234"
+static int itag_id_in_ytb_uri(const char * uri, char *buf, int buf_size) {
+    if (uri == NULL || buf == NULL) {
+        return 0;
+    }
+    const char * p1 = NULL;
+    const char * p2 = NULL;
+    if ((p1=strstr(uri, "/itag/")) != NULL && (p2=strstr(p1, "/mediadata.m3u8")) != NULL) {
+        memset(buf, 0, buf_size);
+        p1 = p1 + strlen("/itag/");
+        int i = 0;
+        while (p1 < p2) {
+            buf[i] = *p1;
+            p1++;
+            i++;
+        }
+        return strlen(buf);
+    } else {
+        ALOGD("no ytb tag found.\n");
+        return 0;
+    }
+}
+
+// "...mlhls://localhost/itag/234/mediadata.m3u8..." => "...mlhls://localhost/itag/234_mediadata.m3u8..."
+static char * uri_modify_ytb_master_itag_path(char * buf) {
+    if (buf == NULL) {
+        return NULL;
+    }
+
+    const char *search = "/mediadata.m3u8";
+    int sLen = strlen(search);
+    char *p1 = strstr(buf, search);
+    while (p1 != NULL) {
+        *p1='_';
+        p1 = strstr(p1+sLen, search);
+    }
+
+    return buf;
+}
+
 int main() {
     char *m3u8 = read_file("test_master.m3u8");
     ALOGD("test_master.m3u8\n%s", m3u8);
@@ -221,30 +261,44 @@ int main() {
     
     const stream_inf_list_t *stream_search = NULL;
     stream_inf_list_t stream_write;
-    stream_inf_list_t *stream_write_ptr = &stream_write;
-    if (find_stream_inf_of(&myMaster, &stream_search, "avc1.", 1280, 0)>=0 && stream_search) {
-        stream_write = *stream_search;
-        stream_write.next = NULL;
-    } else {
-        stream_write_ptr = NULL;
+    stream_inf_list_t *stream_write_ptr = NULL;
+    const int res_search_arr[] = {1920, 1280, 854, 640, 420, 256};
+    for (int c=0; c<sizeof(res_search_arr); c++) {
+        int resolution = res_search_arr[c];
+        if (find_stream_inf_of(&myMaster, &stream_search, "avc1.", resolution, 0)>=0 && stream_search) {
+            stream_write = *stream_search;
+            stream_write.next = NULL;
+            stream_write_ptr = &stream_write;
+            break;
+        }
     }
 
     const media_list_t *media_search = NULL;
     media_list_t media_write;
-    media_list_t *media_write_ptr = &media_write;
+    media_list_t *media_write_ptr = NULL;
     if (stream_write_ptr && find_media_of(&myMaster, &media_search, stream_write_ptr->data->audio)>=0 && media_search) {
         media_write = *media_search;
         media_write.next = NULL;
-    } else {
-        media_write_ptr = NULL;
+        media_write_ptr = &media_write;
     }
+
+    if (stream_write_ptr == NULL || media_write_ptr == NULL) {
+        ALOGW("no available video+audio track.");
+    }
+
+    char itag_buf[32] = {'0','\0'};
+    int len = itag_id_in_ytb_uri(stream_write_ptr->data->uri, itag_buf, sizeof(itag_buf));
+    if (len > 0) ALOGD("extracted ytb tag: %s\n", itag_buf);
 
     char *out = NULL;
     int size = 0;
     HLSCode res = write_m3u8_master(&outMaster, &out, &size, stream_write_ptr, media_write_ptr);
     ALOGD("write m3u8 result: %d\n", res);
-    if (out) ALOGD("content:\n%s\n", out);
-
+    if (out) {
+        ALOGD("content dump(copy a):\n%s\n", out);
+        out = uri_modify_ytb_master_itag_path(out);
+        ALOGD("content dump(copy b):\n%s\n", out);
+    }
     if (m3u8) free(m3u8);
     if (out) free(out);
 
