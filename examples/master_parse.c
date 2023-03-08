@@ -1,11 +1,17 @@
 #include <hlsparse.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
+
+#define ALOGD(...) printf(__VA_ARGS__)
+#define ALOGI(...) printf(__VA_ARGS__)
+#define ALOGW(...) printf(__VA_ARGS__)
+#define ALOGE(...) printf(__VA_ARGS__)
 
 char* read_file(const char* filename) {
     FILE* file = fopen(filename, "rb");
     if (file == NULL) {
-        fprintf(stderr, "Failed to open file '%s'\n", filename);
+        ALOGD("Failed to open file '%s'\n", filename);
         return NULL;
     }   
 
@@ -16,7 +22,7 @@ char* read_file(const char* filename) {
     char* buffer = (char*) malloc(sizeof(char) * (file_size + 1));
     if (buffer == NULL) {
         fclose(file);
-        fprintf(stderr, "Failed to allocate memory for file '%s'\n", filename);
+        ALOGD("Failed to allocate memory for file '%s'\n", filename);
         return NULL;
     }   
 
@@ -24,7 +30,7 @@ char* read_file(const char* filename) {
     if (bytes_read != file_size) {
         fclose(file);
         free(buffer);
-        fprintf(stderr, "Failed to read file '%s'\n", filename);
+        ALOGD("Failed to read file '%s'\n", filename);
         return NULL;
     }   
 
@@ -34,43 +40,162 @@ char* read_file(const char* filename) {
     return buffer;
 }
 
-int main() {
-    // Initialize the library
-    HLSCode res = hlsparse_global_init();
-    if(res != HLS_OK) {
-        fprintf(stderr, "failed to initialize hlsparse");
+
+static int parser_g_init = 0;
+static HLSCode hls_parser_global_init_once() {
+    if (!parser_g_init) {
+        HLSCode res = hlsparse_global_init();
+        if(res != HLS_OK) {
+            ALOGW("failed to initialize hlsparse\n");
+            return -1;
+        }
+        parser_g_init = 1;
+    }
+
+    return HLS_OK;
+}
+
+int parse_m3u8_master(master_t *m3u8_obj, const char *m3u8_txt) {
+    if (NULL == m3u8_obj) {
         return -1;
     }
+
+    HLSCode res = hls_parser_global_init_once();
+    if (res != HLS_OK) {
+      ALOGW("global init failure.");
+      return -1;
+    }
+
+    res = hlsparse_master_init(m3u8_obj);
+    if(res != HLS_OK) {
+        ALOGW("failed to initialize master playlist structure\n");
+        return -1;
+    }
+    m3u8_obj->uri = "\0";
+
+    // parse the playlist information into our master structure
+    int read = hlsparse_master(m3u8_txt, strlen(m3u8_txt), m3u8_obj);
+
+    ALOGD("num of streams: %d, num of iframe_streams, %d, num of keys: %d\n", m3u8_obj->nb_stream_infs, m3u8_obj->nb_iframe_stream_infs, m3u8_obj->nb_session_keys);
+
+    return read;
+}
+
+
+HLSCode write_m3u8_master(master_t *m3u8_obj, char **m3u8_buf, int *buf_len, const stream_inf_list_t *stream_infs, const media_list_t *medias) {
+    if (NULL == m3u8_obj) {
+        return -1;
+    }
+    
+    HLSCode res = hls_parser_global_init_once();
+    if (res != HLS_OK) {
+      ALOGW("global init failure.");
+      return -1;
+    }
+
+    res = hlsparse_master_init(m3u8_obj);
+    if(res != HLS_OK) {
+        ALOGW("failed to initialize master playlist structure\n");
+        return -1;
+    }
+    m3u8_obj->version = 4;
+    m3u8_obj->independent_segments = HLS_TRUE;
+    m3u8_obj->uri = "\0";
+
+    if (stream_infs) m3u8_obj->stream_infs = *stream_infs;
+    if (medias) m3u8_obj->media = *medias;
+
+    res = hlswrite_master(m3u8_buf, buf_len, m3u8_obj);
+    if(res != HLS_OK) {
+        ALOGW("failed to write the m3u8\n");
+        return -1;
+    }
+
+    return res;
+}
+
+const char* _stristr(const char* haystack, const char* needle) {
+  do {
+    const char* h = haystack;
+    const char* n = needle;
+    while (tolower((unsigned char) *h) == tolower((unsigned char ) *n) && *n) {
+      h++;
+      n++;
+    }
+    if (*n == 0) {
+      return haystack;
+    }
+  } while (*haystack++);
+  return 0;
+}
+
+int find_stream_inf_of(const master_t *m3u8_obj, const stream_inf_list_t **out, const char * codec, const int width, const int height) {
+    if (NULL == m3u8_obj) {
+        return -1;
+    }
+
+    const stream_inf_list_t *streamInf = &m3u8_obj->stream_infs;
+    int idx = 0;
+    while(streamInf && streamInf->data) {
+        int match = 1;
+        if (width > 0 && width != streamInf->data->resolution.width) {
+            match = 0;
+        }
+        if (height > 0 && height != streamInf->data->resolution.width) {
+            match = 0;
+        }
+        if (codec && !_stristr(streamInf->data->codecs, codec)) {
+            match = 0;
+        }
+        if (match) {
+            *out = streamInf;
+            ALOGD("found matching stream: %p at pos: %d\n", *out, idx);
+            return idx;
+        }
+        idx++;
+        streamInf = streamInf->next;
+    }
+    return -1;
+}
+
+int find_media_of(const master_t *m3u8_obj, const media_list_t **out, const char * group_id) {
+    if (NULL == m3u8_obj || NULL == group_id) {
+        return -1;
+    }
+    const media_list_t *mediaInf = &m3u8_obj->media;
+    int idx = 0;
+    while (mediaInf && mediaInf->data) {
+        if (!strcmp(mediaInf->data->group_id, group_id)) {
+            *out = mediaInf;
+            ALOGD("found matching media: %p at pos: %d\n", *out, idx);
+            return idx;
+        }
+        idx++;
+        mediaInf = mediaInf->next;
+    }
+    return -1;
+}
+
+int main() {
+    char *m3u8 = read_file("test_master.m3u8");
+    ALOGD("test_master.m3u8\n%s", m3u8);
 
     // create a master playlist structure
     master_t myMaster;
-    res = hlsparse_master_init(&myMaster);
-    if(res != HLS_OK) {
-        fprintf(stderr, "failed to initialize master playlist structure");
-        return -1;
-    }
-    myMaster.uri = "\0";
-
-    char *m3u8 = read_file("test_master.m3u8");
-    printf("test_master.m3u8\n%s", m3u8);
-
-    const char * masterSrc = m3u8;
     // parse the playlist information into our master structure
-    int read = hlsparse_master(masterSrc, strlen(masterSrc), &myMaster);
-    printf("read a total of %d bytes parsing the master playlist source\n", read);
-
-    printf("num of streams: %d, num of iframe_streams, %d, num of keys: %d\n", myMaster.nb_stream_infs, myMaster.nb_iframe_stream_infs, myMaster.nb_session_keys);
+    int read = parse_m3u8_master(&myMaster, m3u8);
+    ALOGD("read a total of %d bytes parsing the master playlist source\n", read);
 
     // print out all the StreamInf bitrates that were found
     stream_inf_list_t *streamInf = &myMaster.stream_infs;
     int count = 0;
     while(streamInf && streamInf->data) {
-        printf("StreamInf %d Uri: %s\n", count, streamInf->data->uri);
-        printf("StreamInf %d Bandwidth: %f\n", count, streamInf->data->bandwidth);
-        printf("StreamInf %d Codec: %s\n", count, streamInf->data->codecs);
-        printf("StreamInf %d Audio: %s\n", count, streamInf->data->audio);
-        printf("StreamInf %d Video: %s\n", count, streamInf->data->video);
-        printf("StreamInf %d WxH: %dx%d\n", count, streamInf->data->resolution.width, streamInf->data->resolution.height);
+        ALOGD("StreamInf %d Uri: %s\n", count, streamInf->data->uri);
+        ALOGD("StreamInf %d Bandwidth: %f\n", count, streamInf->data->bandwidth);
+        ALOGD("StreamInf %d Codec: %s\n", count, streamInf->data->codecs);
+        ALOGD("StreamInf %d Audio: %s\n", count, streamInf->data->audio);
+        ALOGD("StreamInf %d Video: %s\n", count, streamInf->data->video);
+        ALOGD("StreamInf %d WxH: %dx%d\n", count, streamInf->data->resolution.width, streamInf->data->resolution.height);
         ++count;
         streamInf = streamInf->next;
     }
@@ -78,7 +203,7 @@ int main() {
     media_list_t *mediaInf = &myMaster.media;
     count = 0;
     while (mediaInf && mediaInf->data) {
-        printf("Media %d Uri: %s\n", count, mediaInf->data->uri);
+        ALOGD("Media %d Uri: %s\n", count, mediaInf->data->uri);
         ++count;
         mediaInf = mediaInf->next;
     }
@@ -86,13 +211,42 @@ int main() {
     session_data_list_t *sessInf= &myMaster.session_data;
     count = 0;
     while (sessInf && sessInf->data) {
-        printf("Sess %d Uri: %s\n", count, sessInf->data->uri);
+        ALOGD("Sess %d Uri: %s\n", count, sessInf->data->uri);
         ++count;
         sessInf = sessInf->next;
     }
 
+    
+    master_t outMaster;
+    
+    const stream_inf_list_t *stream_search = NULL;
+    stream_inf_list_t stream_write;
+    stream_inf_list_t *stream_write_ptr = &stream_write;
+    if (find_stream_inf_of(&myMaster, &stream_search, "avc1.", 1280, 0)>=0 && stream_search) {
+        stream_write = *stream_search;
+        stream_write.next = NULL;
+    } else {
+        stream_write_ptr = NULL;
+    }
 
-    free(m3u8);
+    const media_list_t *media_search = NULL;
+    media_list_t media_write;
+    media_list_t *media_write_ptr = &media_write;
+    if (stream_write_ptr && find_media_of(&myMaster, &media_search, stream_write_ptr->data->audio)>=0 && media_search) {
+        media_write = *media_search;
+        media_write.next = NULL;
+    } else {
+        media_write_ptr = NULL;
+    }
+
+    char *out = NULL;
+    int size = 0;
+    HLSCode res = write_m3u8_master(&outMaster, &out, &size, stream_write_ptr, media_write_ptr);
+    ALOGD("write m3u8 result: %d\n", res);
+    if (out) ALOGD("content:\n%s\n", out);
+
+    if (m3u8) free(m3u8);
+    if (out) free(out);
 
     return 0;
 }
