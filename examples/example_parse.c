@@ -30,6 +30,7 @@ int main() {
         fprintf(stderr, "failed to initialize master playlist structure");
         return -1;
     }
+    myMaster.uri="\0";
 
     // parse the playlist information into our master structure
     int read = hlsparse_master(masterSrc, strlen(masterSrc), &myMaster);
@@ -39,6 +40,7 @@ int main() {
     stream_inf_list_t *streamInf = &myMaster.stream_infs;
     int count = 0;
     while(streamInf) {
+        printf("StreamInf %d Uri: %s\n", count, streamInf->data->uri);
         printf("StreamInf %d Bandwidth: %f\n", count, streamInf->data->bandwidth);
         ++count;
         streamInf = streamInf->next;
