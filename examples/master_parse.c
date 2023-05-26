@@ -41,6 +41,39 @@ char* read_file(const char* filename) {
 }
 
 
+static int get_value_by_name(const char *search_str, const char *param, char *value) {
+	if (search_str == NULL || param == NULL || value == NULL) return -1;
+
+	char *p_start , *p_end;
+	char flag = 0;
+
+	int paramLen = strlen(param);
+
+	if (paramLen == 0) return -1;
+
+	p_start = strstr(search_str, param);
+
+	if (!p_start) return 0;
+
+	p_start += paramLen;
+
+	while (*p_start == '=' || *p_start == '\"' || *p_start == '\'') {
+		if (*p_start == '\"' || *p_start == '\'') flag = *p_start;
+		p_start++;
+	}
+	p_end = p_start;
+	flag = flag != 0 ? flag : ',';
+
+	while (*p_end != flag) p_end++;
+
+	if (!p_end) return 0;
+
+	strncpy(value, p_start, p_end - p_start);
+
+	return strlen(value);
+}
+
+
 static int parser_g_init = 0;
 static HLSCode hls_parser_global_init_once() {
     if (!parser_g_init) {
@@ -68,7 +101,7 @@ int parse_m3u8_master(master_t *m3u8_obj, const char *m3u8_txt) {
 
     res = hlsparse_master_init(m3u8_obj);
     if(res != HLS_OK) {
-        ALOGW("failed to initialize master playlist structure\n");
+        ALOGW("failed to initialize master m3u8 structure\n");
         return -1;
     }
     m3u8_obj->uri = "\0";
@@ -77,6 +110,32 @@ int parse_m3u8_master(master_t *m3u8_obj, const char *m3u8_txt) {
     int read = hlsparse_master(m3u8_txt, strlen(m3u8_txt), m3u8_obj);
 
     ALOGD("num of streams: %d, num of iframe_streams, %d, num of keys: %d\n", m3u8_obj->nb_stream_infs, m3u8_obj->nb_iframe_stream_infs, m3u8_obj->nb_session_keys);
+
+    return read;
+}
+
+
+int parse_m3u8_playlist(media_playlist_t *m3u8_obj, const char *m3u8_txt) {
+    if (NULL == m3u8_obj) {
+        return -1;
+    }
+
+    HLSCode res = hls_parser_global_init_once();
+    if (res != HLS_OK) {
+      ALOGW("global init failure.");
+      return -1;
+    }
+
+    res = hlsparse_media_playlist_init(m3u8_obj);
+    if(res != HLS_OK) {
+        ALOGW("failed to initialize playlist m3u8 structure\n");
+        return -1;
+    }
+
+    // parse the playlist information into our master structure
+    int read = hlsparse_media_playlist(m3u8_txt, strlen(m3u8_txt), m3u8_obj);
+
+    ALOGD("num of segments: %d, duration: %f, custom tags: %d, uri: %s\n", m3u8_obj->nb_segments, m3u8_obj->duration, m3u8_obj->nb_custom_tags, m3u8_obj->uri);
 
     return read;
 }
@@ -216,15 +275,15 @@ static char * uri_modify_ytb_master_itag_path(char * buf) {
     return buf;
 }
 
-int main() {
-    char *m3u8 = read_file("test_master.m3u8");
+static void test_master_m3u8_update() {
+    char *m3u8 = read_file("yt_master.m3u8");
     ALOGD("test_master.m3u8\n%s", m3u8);
 
     // create a master playlist structure
     master_t myMaster;
     // parse the playlist information into our master structure
     int read = parse_m3u8_master(&myMaster, m3u8);
-    ALOGD("read a total of %d bytes parsing the master playlist source\n", read);
+    ALOGD("read a total of %d bytes parsing the master source\n", read);
 
     // print out all the StreamInf bitrates that were found
     stream_inf_list_t *streamInf = &myMaster.stream_infs;
@@ -301,6 +360,43 @@ int main() {
     }
     if (m3u8) free(m3u8);
     if (out) free(out);
+}
+
+static void test_segment_m3u8_update() {
+    char *m3u8 = read_file("yt_input_001.m3u8");
+    ALOGD("yt_input_001.m3u8\n%s", m3u8);
+
+    // create a master playlist structure
+    media_playlist_t myPlaylist;
+    // parse the playlist information into our master structure
+    int read = parse_m3u8_playlist(&myPlaylist, m3u8);
+    ALOGD("read a total of %d bytes parsing the playlist source\n", read);
+
+    // print out all the StreamInf bitrates that were found
+    segment_list_t *seg = &myPlaylist.segments;
+    int count = 0;
+    while(seg && seg->data) {
+        ALOGD("Segment %d Uri: %s\n", seg->data->sequence_num, seg->data->uri);
+        ALOGD("Segment byte-range: %d-%d\n", seg->data->byte_range.n, seg->data->byte_range.o);
+        ++count;
+
+        string_list_t *cust_tag = &seg->data->custom_tags;
+        count = 0;
+        while(cust_tag) {
+            ALOGD("Custom tag data: %s\n", cust_tag->data);
+
+            ++count;
+            cust_tag = cust_tag->next;
+        }
+
+        seg = seg->next;
+    }
+}
+
+int main() {
+    test_master_m3u8_update();
+
+    test_segment_m3u8_update();
 
     return 0;
 }
