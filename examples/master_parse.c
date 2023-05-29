@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <regex.h>
 
 #define ALOGD(...) printf(__VA_ARGS__)
 #define ALOGI(...) printf(__VA_ARGS__)
@@ -358,11 +359,16 @@ static void test_master_m3u8_update() {
         out = uri_modify_ytb_master_itag_path(out);
         ALOGD("content dump(copy b):\n%s\n", out);
     }
+
+    // hlsparse_master_term(&outMaster);
+    
     if (m3u8) free(m3u8);
     if (out) free(out);
+
 }
 
-static void test_segment_m3u8_update() {
+
+static void test_playlist_m3u8_update() {
     char *m3u8 = read_file("yt_input_001.m3u8");
     ALOGD("yt_input_001.m3u8\n%s", m3u8);
 
@@ -393,10 +399,48 @@ static void test_segment_m3u8_update() {
     }
 }
 
+static int test_regex() {
+  char * source = "___ abc123def ___ ghi456 ___";
+  char * regexString = "[a-z]*([0-9]+)([a-z]*)";
+  size_t maxGroups = 3;
+
+  regex_t regexCompiled;
+  regmatch_t groupArray[maxGroups];
+
+  if (regcomp(&regexCompiled, regexString, REG_EXTENDED))
+    {
+      printf("Could not compile regular expression.\n");
+      return 1;
+    };
+
+  if ((&regexCompiled, source, maxGroups, groupArray, 0) == 0)
+    {
+      unsigned int g = 0;
+      for (g = 0; g < maxGroups; g++)
+        {
+          if (groupArray[g].rm_so == (size_t)-1)
+            break;  // No more groups
+
+          char sourceCopy[strlen(source) + 1];
+          strcpy(sourceCopy, source);
+          sourceCopy[groupArray[g].rm_eo] = 0;
+          printf("Group %u: [%2u-%2u]: %s\n",
+                 g, groupArray[g].rm_so, groupArray[g].rm_eo,
+                 sourceCopy + groupArray[g].rm_so);
+        }
+    }
+
+  regfree(&regexCompiled);
+
+  return 0;
+}
+
 int main() {
     test_master_m3u8_update();
 
-    test_segment_m3u8_update();
+    test_playlist_m3u8_update();
+
+    test_regex();
 
     return 0;
 }
