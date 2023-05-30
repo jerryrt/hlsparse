@@ -75,6 +75,52 @@ static int get_value_by_name(const char *search_str, const char *param, char *va
 }
 
 
+
+/*
+ * matchResults are pointers to the outputBuf, make sure outputBuf is big enough to store all the results.
+ */
+static int regex_match(const char * source, const char * regexString, size_t maxGroups, char * outputBuf, const char *matchResults[]) {
+    regex_t regexCompiled;
+    regmatch_t groupArray[maxGroups];
+
+    if (regcomp(&regexCompiled, regexString, REG_EXTENDED)) {
+        ALOGW("Could not compile regular expression.\n");
+        return 1;
+    }
+
+    int exec_ret = regexec(&regexCompiled, source, maxGroups, groupArray, 0);
+    if (exec_ret != 0) {
+        ALOGW("Regular expression execution failure: %d.\n", exec_ret);
+        ALOGW("Input: %s, Regex: %s\n", source, regexString);
+        regfree(&regexCompiled);
+        return exec_ret;
+    }
+
+    unsigned int g = 0;
+    char * bufPos = outputBuf;
+    for (g = 0; g < maxGroups; g++) {
+        regmatch_t m = groupArray[g];
+        if (m.rm_so == (size_t)-1)
+            break;  // No more groups
+
+        int matchBeg = m.rm_so;
+        int matchEnd = m.rm_eo;
+        int matchLen = matchEnd - matchBeg;
+
+        matchResults[g] = bufPos;
+        memcpy(bufPos, source+matchBeg, matchLen);
+        bufPos += matchLen;
+        *bufPos = '\0';
+        bufPos += 1;
+
+        //printf("Group %u: [%2u-%2u]: %s\n", g, matchBeg, matchEnd, matchResults[g]);
+    }
+
+    regfree(&regexCompiled);
+
+    return 0;
+}
+
 static int parser_g_init = 0;
 static HLSCode hls_parser_global_init_once() {
     if (!parser_g_init) {
@@ -140,7 +186,6 @@ int parse_m3u8_playlist(media_playlist_t *m3u8_obj, const char *m3u8_txt) {
 
     return read;
 }
-
 
 HLSCode write_m3u8_master(master_t *m3u8_obj, char **m3u8_buf, int *buf_len, const stream_inf_list_t *stream_infs, const media_list_t *medias) {
     if (NULL == m3u8_obj) {
@@ -367,80 +412,216 @@ static void test_master_m3u8_update() {
 
 }
 
+static int parse_yt_ext_tag_data(const char * ytExtTag, char * dataBuf, const char** results) {
+    const char * regexString = "YT-EXT-CONDENSED-URL:BASE-URI=\"(.+)\",PARAMS=\"(.+)\",PREFIX=\"(.+)\"";
+    size_t maxGroups = 4;
+    return regex_match(ytExtTag, regexString, maxGroups, dataBuf, results);
+}
+
+static int split_yt_str_by_delim(char * input, const char * delim, const char** outStrArr) {
+    char * ypPtr = NULL;
+    int ypNum = 0;
+
+    for (outStrArr[ypNum]=strtok_r(input, delim, &ypPtr); outStrArr[ypNum]!=NULL; ) {
+        ypNum++;
+        outStrArr[ypNum]=strtok_r(NULL, delim, &ypPtr);
+    }
+
+    return ypNum;
+}
+
+static void format_yt_uri_with_params(char * newUri, const char * baseUrl, const char **yt_p_arr, const int yt_p_n, const char **yt_u_arr, const int yt_u_n) {
+    if (yt_u_n < 1 || yt_u_n != yt_p_n+1) {
+        ALOGW("[%s:%d]params length invalid(%d:%d), abort.\n",  __func__, __LINE__, yt_p_n, yt_u_n);
+        return;
+    }
+
+    switch (yt_p_n) {
+        case 0:
+            sprintf(
+                newUri, "%s", baseUrl
+            );
+            break;
+        case 1:
+            sprintf(
+                newUri, "%s/%s/%s", baseUrl, 
+                yt_p_arr[0], yt_u_arr[1]
+            );
+            break;
+        case 2:
+            sprintf(
+                newUri, "%s/%s/%s/%s/%s", baseUrl, 
+                yt_p_arr[0], yt_u_arr[1],
+                yt_p_arr[1], yt_u_arr[2]
+            );
+            break;
+        case 3:
+            sprintf(
+                newUri, "%s/%s/%s/%s/%s/%s/%s", baseUrl, 
+                yt_p_arr[0], yt_u_arr[1],
+                yt_p_arr[1], yt_u_arr[2],
+                yt_p_arr[2], yt_u_arr[3]
+            );
+            break;
+        case 4:
+            sprintf(
+                newUri, "%s/%s/%s/%s/%s/%s/%s/%s/%s", baseUrl, 
+                yt_p_arr[0], yt_u_arr[1],
+                yt_p_arr[1], yt_u_arr[2],
+                yt_p_arr[2], yt_u_arr[3],
+                yt_p_arr[3], yt_u_arr[4]
+            );
+            break;
+        case 5:
+            sprintf(
+                newUri, "%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s", baseUrl, 
+                yt_p_arr[0], yt_u_arr[1],
+                yt_p_arr[1], yt_u_arr[2],
+                yt_p_arr[2], yt_u_arr[3],
+                yt_p_arr[3], yt_u_arr[4],
+                yt_p_arr[4], yt_u_arr[5]
+            );
+            break;
+        case 6:
+            sprintf(
+                newUri, "%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s", baseUrl, 
+                yt_p_arr[0], yt_u_arr[1],
+                yt_p_arr[1], yt_u_arr[2],
+                yt_p_arr[2], yt_u_arr[3],
+                yt_p_arr[3], yt_u_arr[4],
+                yt_p_arr[4], yt_u_arr[5],
+                yt_p_arr[5], yt_u_arr[6]
+            );
+            break;
+        case 7:
+            sprintf(
+                newUri, "%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s/%s", baseUrl, 
+                yt_p_arr[0], yt_u_arr[1],
+                yt_p_arr[1], yt_u_arr[2],
+                yt_p_arr[2], yt_u_arr[3],
+                yt_p_arr[3], yt_u_arr[4],
+                yt_p_arr[4], yt_u_arr[5],
+                yt_p_arr[5], yt_u_arr[6],
+                yt_p_arr[6], yt_u_arr[7]
+            );
+            break;
+        default:
+            ALOGW("[%s:%d]too many params, broken logic.\n", __func__, __LINE__);
+    }
+}
 
 static void test_playlist_m3u8_update() {
     char *m3u8 = read_file("yt_input_001.m3u8");
     ALOGD("yt_input_001.m3u8\n%s", m3u8);
 
-    // create a master playlist structure
+    // create a media playlist structure
     media_playlist_t myPlaylist;
-    // parse the playlist information into our master structure
+    // parse the text M3U8
     int read = parse_m3u8_playlist(&myPlaylist, m3u8);
     ALOGD("read a total of %d bytes parsing the playlist source\n", read);
 
     // print out all the StreamInf bitrates that were found
-    segment_list_t *seg = &myPlaylist.segments;
+    segment_list_t *firstSeg = &myPlaylist.segments;
+    segment_list_t *seg = firstSeg;
+
+
+    const int line_len = 2048;
+    char * regexBuf = malloc(line_len);
+    const char* regexMatches[8];
+    const char* baseUrl = NULL;
+    const char* ytParams = NULL;
+    const char* ytPrefix = NULL;
+    if (firstSeg && firstSeg->data 
+        && firstSeg->data->custom_tags.data) {
+        const char *cust_tag_data = firstSeg->data->custom_tags.data;
+        
+        int good = parse_yt_ext_tag_data(cust_tag_data, regexBuf, regexMatches);
+        baseUrl = regexMatches[1];
+        ytParams = regexMatches[2];
+        ytPrefix = regexMatches[3];
+        free(firstSeg->data->custom_tags.data);
+        firstSeg->data->custom_tags.data = NULL;
+    }
+
+    ALOGD("base url: %s\n", baseUrl);
+    ALOGD("yt params: %s\n", ytParams);
+    ALOGD("yt prefix: %s\n", ytPrefix);
+
     int count = 0;
     while(seg && seg->data) {
         ALOGD("Segment %d Uri: %s\n", seg->data->sequence_num, seg->data->uri);
-        ALOGD("Segment byte-range: %d-%d\n", seg->data->byte_range.n, seg->data->byte_range.o);
         ++count;
-
-        string_list_t *cust_tag = &seg->data->custom_tags;
-        count = 0;
-        while(cust_tag) {
-            ALOGD("Custom tag data: %s\n", cust_tag->data);
-
-            ++count;
-            cust_tag = cust_tag->next;
-        }
-
         seg = seg->next;
     }
+
+    const int YT_P_SIZE = 8;
+    const char *yt_p_arr[YT_P_SIZE];
+    memset(yt_p_arr, 0, sizeof(yt_p_arr));
+    const int yt_p_n = split_yt_str_by_delim((char *) ytParams, ",", yt_p_arr);
+
+    char * lineBuf = malloc(line_len*(count+1));
+    memset(lineBuf, 0, line_len*(count+1));
+
+    count = 0;
+    seg = firstSeg;
+
+    while(seg && seg->data) {
+        char * oldUri = seg->data->uri;
+        seg->data->uri = NULL;
+
+        char * newUri = lineBuf+(line_len*count);
+
+        const char *yt_u_arr[YT_P_SIZE];
+        memset(yt_u_arr, 0, sizeof(yt_u_arr));
+        const int yt_u_n = split_yt_str_by_delim(oldUri, "/", yt_u_arr);
+        
+        format_yt_uri_with_params(newUri, baseUrl, yt_p_arr, yt_p_n, yt_u_arr, yt_u_n);
+        seg->data->uri = newUri;
+
+        ALOGD("Segment %d Uri: %s\n", seg->data->sequence_num, seg->data->uri);
+        seg = seg->next;
+        free(oldUri);
+        ++count;
+    }
+
+    int outputBufLen = 0;
+    char * outputBuf = NULL;
+
+    myPlaylist.uri = "\0";
+    HLSCode res = hlswrite_media(&outputBuf, &outputBufLen, &myPlaylist);
+    if(res != HLS_OK) {
+        ALOGW("failed to write the m3u8\n");
+    } else {
+        ALOGW("M3U8 output length: %d\n", outputBufLen);
+    }
+
+    ALOGD("Dumping playlist:\n%s\n", outputBuf);
+    if (outputBuf) free(outputBuf);
+
+    free(m3u8);
+    free(regexBuf);
+    free(lineBuf);
+
+    // hlsparse_media_playlist_term(&myPlaylist);
 }
 
 static int test_regex() {
-  char * source = "___ abc123def ___ ghi456 ___";
-  char * regexString = "[a-z]*([0-9]+)([a-z]*)";
-  size_t maxGroups = 3;
+    const char * source = "___ abc123def ___ ghi456 ___";
+    const char * regexString = "[a-z]*([0-9]+)([a-z]*)";
+    size_t maxGroups = 3;
 
-  regex_t regexCompiled;
-  regmatch_t groupArray[maxGroups];
-
-  if (regcomp(&regexCompiled, regexString, REG_EXTENDED))
-    {
-      printf("Could not compile regular expression.\n");
-      return 1;
-    };
-
-  if ((&regexCompiled, source, maxGroups, groupArray, 0) == 0)
-    {
-      unsigned int g = 0;
-      for (g = 0; g < maxGroups; g++)
-        {
-          if (groupArray[g].rm_so == (size_t)-1)
-            break;  // No more groups
-
-          char sourceCopy[strlen(source) + 1];
-          strcpy(sourceCopy, source);
-          sourceCopy[groupArray[g].rm_eo] = 0;
-          printf("Group %u: [%2u-%2u]: %s\n",
-                 g, groupArray[g].rm_so, groupArray[g].rm_eo,
-                 sourceCopy + groupArray[g].rm_so);
-        }
-    }
-
-  regfree(&regexCompiled);
-
-  return 0;
+    char outputBuf[1024];
+    const char* results[maxGroups];
+    return regex_match(source, regexString, 3, outputBuf, results);
 }
 
+
 int main() {
-    test_master_m3u8_update();
+    // test_master_m3u8_update();
 
     test_playlist_m3u8_update();
 
-    test_regex();
+    // test_regex();
 
     return 0;
 }
