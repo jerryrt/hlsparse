@@ -74,6 +74,7 @@ int parse_master_tag(const char *src, size_t size, master_t *dest)
         char* path = NULL;
         pt += parse_line_to_str(pt, &path, size - (pt - src));
         path_combine(&stream_inf->uri, dest->uri, path);
+        if (path) hls_free(path);
 
         stream_inf_list_t *next = &dest->stream_infs;
 
