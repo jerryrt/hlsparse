@@ -365,58 +365,58 @@ static void test_master_m3u8_update() {
         ++count;
         sessInf = sessInf->next;
     }
-
     
-    // master_t outMaster;
+    master_t outMaster;
     
-    // const stream_inf_list_t *stream_search = NULL;
-    // stream_inf_list_t stream_write;
-    // stream_inf_list_t *stream_write_ptr = NULL;
-    // const int res_search_arr[] = {1920, 1280, 854, 640, 420, 256};
-    // for (int c=0; c<sizeof(res_search_arr); c++) {
-    //     int resolution = res_search_arr[c];
-    //     if (find_stream_inf_of(&myMaster, &stream_search, "avc1.", resolution, 0)>=0 && stream_search) {
-    //         stream_write = *stream_search;
-    //         stream_write.next = NULL;
-    //         stream_write_ptr = &stream_write;
-    //         break;
-    //     }
-    // }
+    const stream_inf_list_t *stream_search = NULL;
+    stream_inf_list_t stream_write;
+    stream_inf_list_t *stream_write_ptr = NULL;
+    const int res_search_arr[] = {1920, 1280, 854, 640, 420, 256};
+    for (int c=0; c<sizeof(res_search_arr); c++) {
+        int resolution = res_search_arr[c];
+        if (find_stream_inf_of(&myMaster, &stream_search, "avc1.", resolution, 0)>=0 && stream_search) {
+            stream_write = *stream_search;
+            stream_write.next = NULL;
+            stream_write_ptr = &stream_write;
+            break;
+        }
+    }
 
-    // const media_list_t *media_search = NULL;
-    // media_list_t media_write;
-    // media_list_t *media_write_ptr = NULL;
-    // if (stream_write_ptr && find_media_of(&myMaster, &media_search, stream_write_ptr->data->audio)>=0 && media_search) {
-    //     media_write = *media_search;
-    //     media_write.next = NULL;
-    //     media_write_ptr = &media_write;
-    // }
+    const media_list_t *media_search = NULL;
+    media_list_t media_write;
+    media_list_t *media_write_ptr = NULL;
+    if (stream_write_ptr && find_media_of(&myMaster, &media_search, stream_write_ptr->data->audio)>=0 && media_search) {
+        media_write = *media_search;
+        media_write.next = NULL;
+        media_write_ptr = &media_write;
+    }
 
-    // if (stream_write_ptr == NULL || media_write_ptr == NULL) {
-    //     ALOGW("no available video+audio track.");
-    // }
+    if (stream_write_ptr == NULL || media_write_ptr == NULL) {
+        ALOGW("no available video+audio track.");
+    }
 
-    // char itag_buf[32] = {'0','\0'};
-    // int len = itag_id_in_ytb_uri(stream_write_ptr->data->uri, itag_buf, sizeof(itag_buf));
-    // if (len > 0) ALOGD("extracted ytb tag: %s\n", itag_buf);
+    char itag_buf[32] = {'0','\0'};
+    int len = itag_id_in_ytb_uri(stream_write_ptr->data->uri, itag_buf, sizeof(itag_buf));
+    if (len > 0) ALOGD("extracted ytb tag: %s\n", itag_buf);
 
-    // char *out = NULL;
-    // int size = 0;
-    // HLSCode res = write_m3u8_master(&outMaster, &out, &size, stream_write_ptr, media_write_ptr);
-    // ALOGD("write m3u8 result: %d\n", res);
-    // if (out) {
-    //     ALOGD("content dump(copy a):\n%s\n", out);
-    //     out = uri_modify_ytb_master_itag_path(out);
-    //     ALOGD("content dump(copy b):\n%s\n", out);
-    // }
+    char *out = NULL;
+    int size = 0;
+    HLSCode res = write_m3u8_master(&outMaster, &out, &size, stream_write_ptr, media_write_ptr);
+    ALOGD("write m3u8 result: %d\n", res);
+    if (out) {
+        ALOGD("content dump(copy a):\n%s\n", out);
+        out = uri_modify_ytb_master_itag_path(out);
+        ALOGD("content dump(copy b):\n%s\n", out);
+    }
 
-    // char test_str[8];
-    // printf("dump address on stack: %p\n", test_str);
-    // hlsparse_master_term(&outMaster);
+    memset(&outMaster.stream_infs, 0, sizeof(outMaster.stream_infs));
+    memset(&outMaster.media, 0, sizeof(outMaster.media));
+
+    hlsparse_master_term(&outMaster);
     hlsparse_master_term(&myMaster);
     
     if (m3u8) free(m3u8);
-    // if (out) free(out);
+    if (out) free(out);
 
 }
 
@@ -595,7 +595,9 @@ static void test_playlist_m3u8_update() {
     int outputBufLen = 0;
     char * outputBuf = NULL;
 
-    myPlaylist.uri = "\0";
+    char * null_str = malloc(1);
+    null_str[0] = '\0';
+    myPlaylist.uri = null_str;
     HLSCode res = hlswrite_media(&outputBuf, &outputBufLen, &myPlaylist);
     if(res != HLS_OK) {
         ALOGW("failed to write the m3u8\n");
@@ -606,11 +608,17 @@ static void test_playlist_m3u8_update() {
     ALOGD("Dumping playlist:\n%s\n", outputBuf);
     if (outputBuf) free(outputBuf);
 
+    seg = firstSeg;
+    while(seg && seg->data) {
+        seg->data->uri = NULL;
+        seg = seg->next;
+    }
+
     free(m3u8);
     free(regexBuf);
     free(lineBuf);
 
-    // hlsparse_media_playlist_term(&myPlaylist);
+    hlsparse_media_playlist_term(&myPlaylist);
 }
 
 static int test_regex() {
@@ -627,9 +635,9 @@ static int test_regex() {
 int main() {
     test_master_m3u8_update();
 
-    // test_playlist_m3u8_update();
+    test_playlist_m3u8_update();
 
-    // test_regex();
+    test_regex();
 
     return 0;
 }
