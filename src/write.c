@@ -223,6 +223,8 @@ HLSCode hlswrite_master(char **dest, int *dest_size, master_t *master)
     }
 
     page_to_str(root, dest, dest_size);
+    
+    free_page_root(root);
 
     return HLS_OK;
 }
@@ -336,6 +338,8 @@ HLSCode hlswrite_media(char **dest, int *dest_size, media_playlist_t *playlist)
     ADD_TAG_IF_TRUE(EXTXENDLIST, playlist->end_list);
     page_to_str(root, dest, dest_size);
 
+    free_page_root(root);
+
     return HLS_OK;
 }
 
@@ -367,6 +371,16 @@ page_t* create_page(page_t *page)
     }
 
     return new_page;
+}
+
+void free_page_root(page_t *root) {
+    page_t * freed = root; 
+    while (freed) {
+        hls_free(freed->buffer);
+        page_t * curr = freed;
+        freed = freed->next;
+        hls_free(curr);
+    }
 }
 
 page_t *pgprintf(page_t *page, const char *format, ...)
