@@ -151,7 +151,10 @@ int parse_m3u8_master(master_t *m3u8_obj, const char *m3u8_txt) {
         ALOGW("failed to initialize master m3u8 structure\n");
         return -1;
     }
-    m3u8_obj->uri = "\0";
+
+    char *null_str = malloc(4);
+    null_str[0] = '\0';
+    m3u8_obj->uri = null_str;
 
     // parse the playlist information into our master structure
     int read = hlsparse_master(m3u8_txt, strlen(m3u8_txt), m3u8_obj);
@@ -205,7 +208,9 @@ HLSCode write_m3u8_master(master_t *m3u8_obj, char **m3u8_buf, int *buf_len, con
     }
     m3u8_obj->version = 4;
     m3u8_obj->independent_segments = HLS_TRUE;
-    m3u8_obj->uri = "\0";
+    char *null_str = malloc(4);
+    null_str[0] = '\0';
+    m3u8_obj->uri = null_str;
 
     if (stream_infs) m3u8_obj->stream_infs = *stream_infs;
     if (medias) m3u8_obj->media = *medias;
@@ -362,53 +367,56 @@ static void test_master_m3u8_update() {
     }
 
     
-    master_t outMaster;
+    // master_t outMaster;
     
-    const stream_inf_list_t *stream_search = NULL;
-    stream_inf_list_t stream_write;
-    stream_inf_list_t *stream_write_ptr = NULL;
-    const int res_search_arr[] = {1920, 1280, 854, 640, 420, 256};
-    for (int c=0; c<sizeof(res_search_arr); c++) {
-        int resolution = res_search_arr[c];
-        if (find_stream_inf_of(&myMaster, &stream_search, "avc1.", resolution, 0)>=0 && stream_search) {
-            stream_write = *stream_search;
-            stream_write.next = NULL;
-            stream_write_ptr = &stream_write;
-            break;
-        }
-    }
+    // const stream_inf_list_t *stream_search = NULL;
+    // stream_inf_list_t stream_write;
+    // stream_inf_list_t *stream_write_ptr = NULL;
+    // const int res_search_arr[] = {1920, 1280, 854, 640, 420, 256};
+    // for (int c=0; c<sizeof(res_search_arr); c++) {
+    //     int resolution = res_search_arr[c];
+    //     if (find_stream_inf_of(&myMaster, &stream_search, "avc1.", resolution, 0)>=0 && stream_search) {
+    //         stream_write = *stream_search;
+    //         stream_write.next = NULL;
+    //         stream_write_ptr = &stream_write;
+    //         break;
+    //     }
+    // }
 
-    const media_list_t *media_search = NULL;
-    media_list_t media_write;
-    media_list_t *media_write_ptr = NULL;
-    if (stream_write_ptr && find_media_of(&myMaster, &media_search, stream_write_ptr->data->audio)>=0 && media_search) {
-        media_write = *media_search;
-        media_write.next = NULL;
-        media_write_ptr = &media_write;
-    }
+    // const media_list_t *media_search = NULL;
+    // media_list_t media_write;
+    // media_list_t *media_write_ptr = NULL;
+    // if (stream_write_ptr && find_media_of(&myMaster, &media_search, stream_write_ptr->data->audio)>=0 && media_search) {
+    //     media_write = *media_search;
+    //     media_write.next = NULL;
+    //     media_write_ptr = &media_write;
+    // }
 
-    if (stream_write_ptr == NULL || media_write_ptr == NULL) {
-        ALOGW("no available video+audio track.");
-    }
+    // if (stream_write_ptr == NULL || media_write_ptr == NULL) {
+    //     ALOGW("no available video+audio track.");
+    // }
 
-    char itag_buf[32] = {'0','\0'};
-    int len = itag_id_in_ytb_uri(stream_write_ptr->data->uri, itag_buf, sizeof(itag_buf));
-    if (len > 0) ALOGD("extracted ytb tag: %s\n", itag_buf);
+    // char itag_buf[32] = {'0','\0'};
+    // int len = itag_id_in_ytb_uri(stream_write_ptr->data->uri, itag_buf, sizeof(itag_buf));
+    // if (len > 0) ALOGD("extracted ytb tag: %s\n", itag_buf);
 
-    char *out = NULL;
-    int size = 0;
-    HLSCode res = write_m3u8_master(&outMaster, &out, &size, stream_write_ptr, media_write_ptr);
-    ALOGD("write m3u8 result: %d\n", res);
-    if (out) {
-        ALOGD("content dump(copy a):\n%s\n", out);
-        out = uri_modify_ytb_master_itag_path(out);
-        ALOGD("content dump(copy b):\n%s\n", out);
-    }
+    // char *out = NULL;
+    // int size = 0;
+    // HLSCode res = write_m3u8_master(&outMaster, &out, &size, stream_write_ptr, media_write_ptr);
+    // ALOGD("write m3u8 result: %d\n", res);
+    // if (out) {
+    //     ALOGD("content dump(copy a):\n%s\n", out);
+    //     out = uri_modify_ytb_master_itag_path(out);
+    //     ALOGD("content dump(copy b):\n%s\n", out);
+    // }
 
+    // char test_str[8];
+    // printf("dump address on stack: %p\n", test_str);
     // hlsparse_master_term(&outMaster);
+    hlsparse_master_term(&myMaster);
     
     if (m3u8) free(m3u8);
-    if (out) free(out);
+    // if (out) free(out);
 
 }
 
@@ -617,9 +625,9 @@ static int test_regex() {
 
 
 int main() {
-    // test_master_m3u8_update();
+    test_master_m3u8_update();
 
-    test_playlist_m3u8_update();
+    // test_playlist_m3u8_update();
 
     // test_regex();
 
