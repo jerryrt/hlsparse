@@ -354,6 +354,10 @@ static void test_master_m3u8_update() {
     count = 0;
     while (mediaInf && mediaInf->data) {
         ALOGD("Media %d Uri: %s\n", count, mediaInf->data->uri);
+        ALOGD("Media %d Type: %d\n", count, mediaInf->data->type);
+        ALOGD("Media %d GroupId: %s\n", count, mediaInf->data->group_id);
+        ALOGD("Media %d Language: %s\n", count, mediaInf->data->language);
+        ALOGD("Media %d IsDefault: %d\n", count, mediaInf->data->is_default);
         ++count;
         mediaInf = mediaInf->next;
     }
